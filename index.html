@@ -277,6 +277,7 @@ a.k[aria-disabled="true"] { opacity: .45; cursor: not-allowed; }
 .orden code { background: var(--sup2); border: 1px solid var(--linea); border-radius: .5rem; padding: .375rem .5rem; font-size: .9375rem; overflow-wrap: anywhere; white-space: pre-wrap; max-width: 100%; }
 .copiar-o { min-height: 2.5rem; }
 .copiar-o.armado { border-color: var(--rojo); color: var(--rojo); }
+.copiar-o.espera { opacity: .55; }
 .ordenes { display: grid; gap: .25rem; }
 .semaforo { display: flex; flex-wrap: wrap; gap: .375rem; margin: .5rem 0 0; }
 .sem { display: inline-block; border-radius: 999px; padding: .125rem .5rem; font-size: .8125rem; font-weight: 700; white-space: nowrap; }
@@ -385,7 +386,7 @@ jag-pie.jagp .jagp-a:hover { color: var(--jagt-tinta); }
 <script>
 (function () {
   'use strict';
-  var VERSION = '1.2 · 14/11/2026';
+  var VERSION = '1.3 · 21/11/2026';
   var UTIL = {}, ORDEN = [], EN_CAMINO = [], ESCENAS = {}, PRUEBA = window.F1_PRUEBA || null;
   var $ = function (s, r) { return (r || document).querySelector(s); };
   var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
@@ -552,7 +553,7 @@ jag-pie.jagp .jagp-a:hover { color: var(--jagt-tinta); }
       h += '<section class="estante" id="estante-' + t + '"><h2>' + tipoNombre(t) + '</h2><div class="lista">' + us.map(function (u) {
         return '<a class="k ancha" href="#' + u.id + '">' + ico(u.icono || 'guia') + '<span><span class="tt">' + esc(u.titulo) + '</span><span class="sub">' + esc(u.corto || '') + (u.tiempo ? ' · ' + esc(u.tiempo) : '') + '</span></span><span class="der">' + ico('sig') + '</span></a>';
       }).join('') + extra.map(function (u) {
-        return '<a class="k ancha" href="#' + u.id + '/chuleta">' + ico('chul') + '<span><span class="tt">' + esc(u.titulo) + '</span><span class="sub">La chuleta: todo en una pantalla</span></span><span class="der">' + ico('sig') + '</span></a>';
+        return '<a class="k ancha" href="#' + u.id + '/chuleta">' + ico('chul') + '<span><span class="tt">' + esc(u.titulo) + '</span><span class="sub">La chuleta: lo justo, sin explicaciones</span></span><span class="der">' + ico('sig') + '</span></a>';
       }).join('') + '</div></section>';
     });
     var ec = EN_CAMINO.filter(function (u) { return !UTIL[u.id] && casaBusca(u, q); });
@@ -565,7 +566,14 @@ jag-pie.jagp .jagp-a:hover { color: var(--jagt-tinta); }
     var i = $('#busca'); if (i) { i.addEventListener('input', function () { est.busca = i.value; var pos = i.selectionStart; vistaLanzador(); var j = $('#busca'); j.focus(); try { j.setSelectionRange(pos, pos); } catch (e) {   } }); }
   }
   function sinTildes(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); }
-  function casaBusca(u, q) { if (!q) return true; var t = sinTildes([u.titulo, u.corto, (u.claves || []).join(' ')].join(' ')); return sinTildes(q).split(/\s+/).every(function (w) { return t.indexOf(w) >= 0; }); }
+  var VACIAS = ' a al como con de del el en es hay la las lo los me mi no para por que se sin su tengo un una va y ';
+  function palabras(s) { return sinTildes(s).split(/[^a-z0-9.]+/).filter(Boolean); }
+  function casaBusca(u, q) {
+    var ws = palabras(q); if (!ws.length) return true;
+    var t = ' ' + palabras([u.titulo, u.corto, (u.claves || []).join(' ')].join(' ')).join(' ');
+    var ps = ws.filter(function (w) { return VACIAS.indexOf(' ' + w + ' ') < 0; }); if (!ps.length) ps = ws;
+    return ps.every(function (w) { return t.indexOf(' ' + w) >= 0; });
+  }
   function cabGuia(u, extra) {
     return cab('<a class="k ico peq plana" href="#/" aria-label="Volver al inicio">' + ico('atras') + '</a>', esc(u.titulo), (extra || '') + '<button type="button" class="k ico peq plana" data-accion="menu" data-u="' + u.id + '" aria-label="Más opciones">' + ico('menu') + '</button>');
   }
@@ -598,6 +606,7 @@ jag-pie.jagp .jagp-a:hover { color: var(--jagt-tinta); }
     app.innerHTML = h;
   }
   var frenoOk = {};
+  function copiarFreno() { var pend = $$('[data-freno]').some(function (x) { return !x.checked; }); $$('main .copiar-o').forEach(function (b) { b.classList.toggle('espera', pend); if (pend) b.setAttribute('aria-disabled', 'true'); else b.removeAttribute('aria-disabled'); }); }
   function vistaPaso(u, pid) {
     var s = eu(u.id), c = casoDe(u);
     if (!casoCompleto(u, c)) { location.replace('#' + u.id); return; }
@@ -638,6 +647,7 @@ jag-pie.jagp .jagp-a:hover { color: var(--jagt-tinta); }
       '<button type="button" class="k" data-accion="si-falla"' + (falla.length ? '' : ' disabled') + '>Si falla</button>' +
       '<button type="button" class="k prim" data-accion="hecho"' + (bloqueado ? ' disabled' : '') + '>' + (ultimo ? 'Terminar' : 'Hecho') + ico('sig') + '</button></nav>';
     app.innerHTML = h;
+    copiarFreno();
     arrancarEscenas(app, c);
     var lp = $('.lp.aqui'); if (lp && lp.scrollIntoView && window.innerWidth >= 900) try { lp.scrollIntoView({ block: 'nearest' }); } catch (e) {   }
   }
@@ -922,6 +932,7 @@ jag-pie.jagp .jagp-a:hover { color: var(--jagt-tinta); }
     if (b.classList.contains('btn-voz')) { ev.preventDefault(); Voz.leer(b.getAttribute('data-voz') || '', b); return; }
     if (b.hasAttribute('data-copiar')) {
       ev.preventDefault(); var ec = b.querySelector('.est');
+      if (b.classList.contains('espera')) { if (ec) { ec.textContent = 'Marca antes las dos casillas'; clearTimeout(b._t); b._t = setTimeout(function () { ec.textContent = 'Copiar'; }, 3000); } return; }
       if (b.getAttribute('data-rojo') && !b.classList.contains('armado')) { b.classList.add('armado'); if (ec) ec.textContent = 'Borra datos: toca otra vez'; clearTimeout(b._t); b._t = setTimeout(function () { b.classList.remove('armado'); if (ec) ec.textContent = 'Copiar'; }, 4000); return; }
       b.classList.remove('armado'); clearTimeout(b._t); copiar(b.getAttribute('data-copiar'), b); return;
     }
@@ -967,7 +978,7 @@ jag-pie.jagp .jagp-a:hover { color: var(--jagt-tinta); }
       return;
     }
     if (t.hasAttribute('data-freno')) { var pp = pasoActual(); if (!pp) return; (frenoOk[pp.id] = frenoOk[pp.id] || {})[t.getAttribute('data-freno')] = t.checked;
-      var hb = $('[data-accion="hecho"]'), n = $$('[data-freno]').length; if (hb) hb.disabled = !(Object.keys(frenoOk[pp.id]).filter(function (k) { return frenoOk[pp.id][k]; }).length >= n); return; }
+      copiarFreno(); var hb = $('[data-accion="hecho"]'), n = $$('[data-freno]').length; if (hb) hb.disabled = !(Object.keys(frenoOk[pp.id]).filter(function (k) { return frenoOk[pp.id][k]; }).length >= n); return; }
     if (t.hasAttribute('data-nec')) { s.nec[t.getAttribute('data-nec')] = t.checked; guardar(); return; }
     if (t.hasAttribute('data-fin')) { s.fin[t.getAttribute('data-fin')] = t.checked; guardar(); redibujar(); return; }
   });
@@ -1085,11 +1096,11 @@ jag-pie.jagp .jagp-a:hover { color: var(--jagt-tinta); }
     }
   });
   E('formatear', {
-    alt: 'El cuadro «Formatear PENDRIVE (E:)»: Capacidad, «Sistema de archivos» desplegado con exFAT, «Tamaño de unidad de asignación» predeterminado, «Etiqueta del volumen» PENDRIVE, «Formato rápido» marcado y los botones «Iniciar» y «Cerrar».',
+    alt: 'El cuadro «Formatear PENDRIVE (G:)»: Capacidad, «Sistema de archivos» desplegado con exFAT, «Tamaño de unidad de asignación» predeterminado, «Etiqueta del volumen» PENDRIVE, «Formato rápido» marcado y los botones «Iniciar» y «Cerrar».',
     pie: 'Mira la letra del título: es la unidad que se va a borrar',
     html: function (c) {
       var fs = (c && c.fs) || 'exFAT';
-      return win('Formatear PENDRIVE (E:)',
+      return win('Formatear PENDRIVE (G:)',
         '<div class="lbl">Capacidad:</div><div class="row" style="border:1px solid #C9C9C9;padding:.15rem .4rem;background:#fff">29,8 GB</div>' +
         '<div class="lbl">Sistema de archivos</div><div class="row anillo" style="border:1px solid #C9C9C9;padding:.15rem .4rem;background:#fff;justify-content:space-between"><b>' + esc(fs) + '</b><span>⌄</span></div>' +
         '<div class="lbl">Tamaño de unidad de asignación</div><div class="row" style="border:1px solid #C9C9C9;padding:.15rem .4rem;background:#fff">Tamaño de asignación predeterminado</div>' +
@@ -1106,7 +1117,7 @@ jag-pie.jagp .jagp-a:hover { color: var(--jagt-tinta); }
       return win('Administración de discos',
         disco('<b>Disco 0</b><br>Básico<br>476,92 GB<br>En línea', [[1, 'EFI', 'sis'], [8, '<b>Windows (C:)</b><br>475,9 GB NTFS', 'dat'], [1, 'Recup.', 'sis']]) +
         '<div class="lbl" style="margin:.1rem 0 .4rem">El de Windows: no se toca.</div>' +
-        disco('<b>Disco 1</b><br>Extraíble<br>29,80 GB<br>En línea', [[8, '<b>CCCOMA_X64FRE_ES-ES_DV9 (E:)</b><br>29,77 GB NTFS', 'dat'], [2, 'RUFUS_BOOT<br>1 MB FAT', 'dat']], '#C64600') +
+        disco('<b>Disco 1</b><br>Extraíble<br>29,80 GB<br>En línea', [[8, '<b>CCCOMA_X64FRE_ES-ES_DV9 (G:)</b><br>29,77 GB NTFS', 'dat'], [2, 'RUFUS_BOOT<br>1 MB FAT', 'dat']], '#C64600') +
         '<div style="border:1px solid #C9C9C9;background:#fff;border-radius:.3rem;padding:.25rem;max-width:15rem;margin:.4rem 0 0 auto">' +
         '<div style="padding:.15rem .4rem">Formatear...</div><div class="anillo" style="padding:.15rem .4rem"><b>Eliminar volumen...</b></div></div>' +
         '<div class="lbl">Cuando todo el Disco 1 sea «No asignado»: botón derecho › «Nuevo volumen simple...».</div>');
@@ -1131,7 +1142,7 @@ jag-pie.jagp .jagp-a:hover { color: var(--jagt-tinta); }
   E('rufus', {
     alt: 'La ventana de Rufus con el pendrive en Dispositivo, la ISO elegida, GPT y UEFI.',
     html: function () {
-      return win('Rufus 4.15',
+      return win('Rufus 4.16',
         '<div class="sep">Propiedades de la unidad</div>' +
         '<div class="lbl">Dispositivo</div><div class="campo anillo"><span>MARIO (D:) [16 GB]</span><span>⌄</span></div>' +
         '<div class="lbl">Elección de arranque</div><div class="row"><div class="campo" style="flex:1"><span>Win11_26H2_Spanish_x64.iso</span><span>⌄</span></div><span class="btn">SELECCIONAR ⌄</span></div>' +
@@ -1278,10 +1289,10 @@ jag-pie.jagp .jagp-a:hover { color: var(--jagt-tinta); }
 })();
 F1.registrar({
   id: 'U01', tipo: 'guia', icono: 'win',
-  titulo: 'Instalar Windows 11 desde cero', corto: 'Pendrive, formateo e instalación', tiempo: '1 h + la copia',
-  revisado: 'nov. 2026', version: 'Windows 11 26H2 · Rufus 4.15',
-  claves: ['formatear', 'formateo', 'reinstalar', 'instalar windows', 'pendrive', 'usb', 'rufus', 'media creation tool', 'iso', 'particiones'],
-  resumen: 'De «tengo un PC y un pendrive» a «Windows 11 limpio, actualizado, activado y con los datos devueltos». Una hora, la mitad esperando, sin contar la copia ni las actualizaciones. Se borra el disco entero: primero, la copia.',
+  titulo: 'Instalar Windows 11 desde cero', corto: 'Pendrive, formateo e instalación', tiempo: '1-2 h + la copia',
+  revisado: 'nov. 2026', version: 'Windows 11 26H2 · Rufus 4.16',
+  claves: ['formatear', 'formateo', 'reinstalar', 'instalar windows', 'pendrive', 'usb', 'rufus', 'media creation tool', 'iso', 'particiones', 'requisitos', 'tpm', 'cuenta local', 'cuenta microsoft', 'licencia', 'activar', 'windows 10', 'de cero', 'instalacion limpia'],
+  resumen: 'De «tengo un PC y un pendrive» a «Windows 11 limpio, actualizado, activado y con los datos devueltos». Una hora con Media Creation Tool, la mitad esperando; con Rufus, hora y media o dos (bajar la ISO y escribir el pendrive). Sin contar la copia ni las actualizaciones. Se borra el disco entero: primero, la copia.',
   necesitas: [
     'Un pendrive que se pueda borrar entero: **8 GB** con Media Creation Tool, **16 GB** con Rufus (la ISO ocupa 9 GB)',
     'Un PC con Windows e Internet donde crear el pendrive',
@@ -1328,7 +1339,7 @@ F1.registrar({
           { solo: { cuenta: 'ms' }, t: 'El dueño delante o al teléfono: el primer inicio pide su cuenta Microsoft y puede mandarle un código.' }],
         porque: 'Si la batería se acaba a mitad de la instalación, el PC puede quedarse sin arrancar.' },
       { id: 'p02', riesgo: 'a', aviso: 'lo que no copies ahora, se pierde', titulo: 'Salva lo que importa y ábrelo en otro equipo',
-        hacer: ['Copia a un disco USB o a la nube, de cada usuario (cada uno tiene su carpeta en C:\\Usuarios): **Documentos, Escritorio, Descargas, Imágenes y Vídeos**.',
+        hacer: ['Copia a un disco USB o a la nube, de cada usuario (cada uno tiene su carpeta en C:\\Usuarios): **Escritorio, Documentos, Descargas, Imágenes, Música y Vídeos**.',
           'Pregunta al dueño si algún programa guarda sus datos en otro sitio (facturación, correo de escritorio, juegos) y cópialos también.',
           'Si el PC tiene **otro disco con datos**, cópialo también: un error en {p:p16} lo borraría.',
           'Del navegador, **marcadores y contraseñas**: que el dueño inicie sesión en su navegador para que se sincronicen, o expórtalos desde su configuración. Apunta los programas que usa y sus **licencias**.',
@@ -1338,10 +1349,11 @@ F1.registrar({
         ir: { u: 'U05', t: 'La copia antes de formatear, paso a paso' },
         fallos: [{ s: 'El PC no arranca y no puedes sacar los datos', r: 'No sigas con la guía. Mira antes por qué no arranca: a veces se arregla sin borrar. Si no, saca el disco y léelo en otro PC con un adaptador USB, o cópialo desde el inicio avanzado ({u:U05}, con «Windows no arranca»). Borrar sin copia no tiene vuelta atrás.', ir: { u: 'U03', t: 'Diagnostica por qué no arranca' } }] },
       { id: 'p03', riesgo: 'a', aviso: 'sin esto, después no se activa o te equivocas de disco', titulo: 'Apunta lo que tiene el PC',
-        hacer: ['La **edición** de Windows: Configuración › «Sistema» › «Información» › «Especificaciones de Windows» › «Edición» (Home o Pro; en Windows 10, Sistema › Acerca de).',
+        hacer: ['Si el PC es de una empresa o de un centro (se entra con una cuenta de trabajo, o lo llevan desde fuera), **pregunta a quien lo lleve antes de borrar nada**: puede que tengan que darlo de baja o que deba configurarse a su manera.',
+          'La **edición** de Windows: Configuración › «Sistema» › «Información» › «Especificaciones de Windows» › «Edición» (Home o Pro; en Windows 10, Sistema › Acerca de).',
           'El **tamaño del disco** donde está Windows: botón derecho en Inicio › «Administración de discos»: el disco que tiene «(C:)» y su tamaño, a la izquierda (por ejemplo, 238 GB). Si hay otro disco, apunta también su tamaño y su **letra** (por ejemplo, D:).',
           'La **marca y el modelo** (en la pegatina de debajo o de detrás): te hacen falta para la tecla de {p:p10} y para los controladores.',
-          'Si hay discos **cifrados** con {g:BitLocker} (el cifrado de Windows: Panel de control › «Cifrado de unidad BitLocker» enseña cada unidad), ten a mano su clave de recuperación: con cuenta Microsoft, el dueño la ve en account.microsoft.com/devicerecoverykeys; si no, donde la guardaron (un papel, un pendrive).',
+          'Si hay discos **cifrados** con {g:BitLocker} (el cifrado de Windows: Panel de control › «Cifrado de unidad BitLocker» enseña cada unidad), ten a mano su clave de recuperación: con cuenta Microsoft, el dueño la ve en aka.ms/myrecoverykey; si no, donde la guardaron (un papel, un pendrive).',
           'Si el PC es raro (muy nuevo, de una marca poco común o con una tarjeta de red antigua), baja **en el PC donde haces el pendrive** el **controlador de red** y, en portátiles Intel recientes, el **de almacenamiento** (Intel RST o VMD), de la web del fabricante y descomprimido (que se vean archivos .inf).'],
         porque: ['La licencia es de una edición: si instalas Pro donde había Home, no se activa sola. El tamaño es lo que te dirá en {p:p16} cuál es el disco bueno. Y si cambias algo del arranque con el disco cifrado y te arrepientes, Windows te pedirá la clave.'] },
       { id: 'p04', riesgo: 'v', solo: { req: 'nose' }, titulo: 'Mira si cumple los requisitos',
@@ -1358,7 +1370,7 @@ F1.registrar({
         hacer: ['En el PC donde vas a crear el pendrive, abre **microsoft.com/software-download/windows11** («Descargar Windows 11»).',
           { solo: { herr: 'mct' }, t: 'En «Crear medios de instalación de Windows 11», «Descargar ahora»: baja la herramienta de creación de medios (Media Creation Tool).' },
           { solo: { herr: 'rufus' }, t: 'En «Descargar una imagen de disco (archivo ISO) de Windows 11 para dispositivos x64», elige «Windows 11 (ISO con varias ediciones para dispositivos x64)», «Descargar ahora», el idioma «Español», «Confirmar» y, abajo, «64 bits Descargar». Son 9 GB: a Descargas.' },
-          { solo: { herr: 'rufus' }, t: 'Y **Rufus**, de su web, **rufus.ie**: el primer enlace de la lista (rufus-4.15.exe).' },
+          { solo: { herr: 'rufus' }, t: 'Y **Rufus**, de su web, **rufus.ie**: el primer enlace de la lista (rufus-4.16.exe en noviembre de 2026; si hay uno más nuevo, ese).' },
           { solo: { herr: null }, t: 'Antes, responde en {p:p04} si cumple: de eso depende qué bajas.' }],
         porque: 'Las ISO y los programas de otras webs pueden venir cambiados. La de Microsoft es la buena. El enlace de la ISO vale 24 horas: si caduca, vuelve a pedirlo.',
         fallos: [{ s: 'La página no deja bajar la ISO o da un error', r: 'Espera un rato y prueba otra vez, o desde otro navegador: la página a veces corta varias descargas seguidas.' }] },
@@ -1488,7 +1500,8 @@ F1.registrar({
           { solo: { cuenta: 'local' }, s: 'No sale ninguna red', r: 'Con la cuenta local de Rufus se puede seguir sin Internet: elige la opción de no tener conexión. Ya en el escritorio, instala el controlador que copiaste ({p:p23}), o conecta un cable, un adaptador wifi USB o un móvil Android como módem por USB.' }] },
       { id: 'p20', riesgo: 'a', aviso: 'la cuenta es del dueño, no tuya', titulo: 'La cuenta',
         hacer: [
-          { solo: { cuenta: 'ms' }, t: 'Si pregunta para qué es el equipo, «Configurar para uso personal».' },
+          { solo: { cuenta: 'ms' }, t: 'Si pregunta para qué es el equipo, elige el uso personal.' },
+          { solo: { cuenta: 'ms' }, t: 'Si el PC es de una empresa o de un centro que usa cuentas de trabajo (Microsoft 365), **para aquí** y pregunta a su informático: con la cuenta de trabajo, el equipo pasa a ser de la organización. Lo explica {u:U06}, con «Cuenta profesional o educativa».' },
           { solo: { cuenta: 'ms' }, t: 'Escribe el correo de la **cuenta Microsoft del dueño** y su contraseña (o el código que le llega). Si no tiene, que la cree él con «Crear una cuenta».' },
           { solo: { cuenta: 'ms' }, t: 'Te pide un **PIN**: que lo elija el dueño.' },
           { solo: { cuenta: 'local' }, t: 'Rufus ya creó la cuenta con el nombre que escribiste: Windows no pregunta por la cuenta.' },
@@ -1505,12 +1518,12 @@ F1.registrar({
       { id: 'p22', riesgo: 'v', titulo: 'Windows Update, hasta que no quede nada',
         hacer: [{ t: 'Si desconectaste un disco de datos ({p:p09}), conéctalo ahora (con el PC apagado y sin corriente).' },
           'Configuración › «Windows Update» › «Buscar actualizaciones». Instala y reinicia cuantas veces pida, hasta que ponga «¡Todo está actualizado!».',
-          'Después, «Opciones avanzadas» › «Actualizaciones opcionales»: instala los controladores que salgan.'],
+          'Después, «Opciones avanzadas» › «Opciones adicionales» › «Actualizaciones opcionales»: instala los controladores que salgan.'],
         ir: { u: 'U06', t: 'La puesta a punto completa después de instalar' } },
       { id: 'p23', riesgo: 'v', titulo: 'El Administrador de dispositivos, sin avisos',
         hacer: ['Botón derecho en Inicio › «Administrador de dispositivos».',
           'Si algo lleva un triángulo amarillo, le falta el {g:controlador}: búscalo en «Actualizaciones opcionales» o en la web del fabricante con el modelo que apuntaste.',
-          'Si lo tienes en la carpeta «drivers» del pendrive: botón derecho en el dispositivo › «Actualizar controlador» › «Examinar mi PC en busca de controladores» y elige esa carpeta.'] },
+          'Si lo tienes en la carpeta «drivers» del pendrive: botón derecho en el dispositivo › «Actualizar controlador» › la opción de buscar los controladores en tu PC, y elige esa carpeta.'] },
       { id: 'p24', riesgo: 'v', titulo: 'Comprueba que está activado',
         hacer: ['Configuración › «Sistema» › «Activación»: en «Estado de activación» tiene que poner «Activo».',
           'Si pone «No está activo», espera unos minutos con Internet. Si sigue, casi siempre es la edición: mira la que tenía ({p:p03}).'],
@@ -1518,7 +1531,7 @@ F1.registrar({
         fallos: [{ s: '«No está activo» con la edición buena', r: 'En esa misma página, «Solucionar problemas»: si la licencia estaba en la cuenta Microsoft del dueño, la recupera. Si el PC nunca tuvo licencia de Windows 10 u 11, hace falta una clave.' }] },
       { id: 'p25', riesgo: 'a', aviso: 'sin la clave, los datos pueden quedarse cerrados', titulo: 'El cifrado: la clave, guardada',
         hacer: ['Configuración › «Privacidad y seguridad» › «Cifrado del dispositivo» (en Pro, también «Cifrado de unidad BitLocker» en el Panel de control). Si no sale, el PC no cifra solo: nada que hacer.',
-          { solo: { cuenta: 'ms' }, t: 'Si está activado, la clave de recuperación ya está en la cuenta Microsoft del dueño: que lo compruebe en **account.microsoft.com/devicerecoverykeys**.' },
+          { solo: { cuenta: 'ms' }, t: 'Si está activado, la clave de recuperación ya está en la cuenta Microsoft del dueño: que lo compruebe en **aka.ms/myrecoverykey**.' },
           { solo: { cuenta: 'local' }, t: 'Con cuenta local, en Rufus marcaste que no cifrara. Si aun así sale activado, guarda la clave («Copia de seguridad de la clave de recuperación») en un pendrive o en papel, para el dueño.' },
           'Si un disco de datos estaba cifrado, ábrelo con su clave (la que tenías a mano en {p:p03}).',
           '**Nunca** dejes un disco cifrado sin la clave guardada en algún sitio.'],
@@ -1536,7 +1549,7 @@ F1.registrar({
     'Los datos del dueño están en su sitio y se abren; un disco de datos, con su letra de antes.', 'Si un disco está cifrado, su clave está guardada.', 'El dueño entra con su cuenta y sabe su contraseña o su PIN.'],
   finTitulo: 'Comprueba la entrega', finTexto: 'Antes de dar el equipo por terminado, comprueba cada punto, con el dueño delante si puede ser.',
   finListo: 'Todo comprobado: Windows 11 limpio, al día, activado y con sus datos. Trabajo terminado.',
-  despues: ['{u:U06}', 'El pendrive de Media Creation Tool vale para otros PC. El de Rufus lleva las casillas que marcaste (y, si hay cuenta local, su nombre): para otro PC, mira si sirven o rehazlo.', 'Para volver a usar el pendrive como uno normal (sale más pequeño y en dos unidades): {u:U11}.'],
+  despues: ['{u:U06}', 'El pendrive de Media Creation Tool vale para otros PC. El de Rufus lleva las casillas que marcaste (y, si hay cuenta local, su nombre): para otro PC, mira si sirven o rehazlo.', 'Para volver a usar el pendrive como uno normal (el de Rufus sale en dos partes: la suya y una de 1 MB, RUFUS_BOOT): {u:U11}.'],
   chuleta: [
     { r: 'a', t: '**Antes:** copia de los datos, **abierta en otro equipo**. Apunta la edición (Home o Pro), el tamaño del disco, la marca y el modelo.' },
     { r: 'r', t: '**Pendrive:** de 8 GB (Media Creation Tool) o 16 GB (Rufus), **solo él** enchufado: se borra entero.' },
@@ -1572,7 +1585,7 @@ F1.registrar({
   id: 'U02', tipo: 'chuleta', icono: 'tecla',
   titulo: 'Teclas de BIOS y de arranque', corto: 'El menú de arranque y la BIOS de cada marca', tiempo: '10 s',
   revisado: 'nov. 2026', version: 'webs de soporte de cada marca',
-  claves: ['bios', 'uefi', 'boot', 'menu de arranque', 'f12', 'f2', 'supr', 'arrancar desde usb', 'tecla'],
+  claves: ['bios', 'uefi', 'boot', 'menu de arranque', 'f12', 'f2', 'supr', 'arrancar desde usb', 'tecla', 'tpm', 'arranque seguro', 'secure boot'],
   intro: 'El **menú de arranque** elige desde dónde arrancar solo esta vez (el pendrive). La **BIOS/UEFI** cambia la configuración de la placa. Pulsa la tecla **varias veces desde que pulsas encender**, salvo donde diga «mantener».',
   buscaTexto: 'Busca tu marca: Dell, HP, Lenovo…',
   columnas: [{ id: 'marca', t: 'Marca' }, { id: 'equipo', t: 'Equipo' }, { id: 'menu', t: 'Menú de arranque', tecla: true }, { id: 'bios', t: 'BIOS / UEFI', tecla: true }, { id: 'nota', t: 'Nota' }],
@@ -1611,7 +1624,7 @@ F1.registrar({
       'Si no sale «Configuración de firmware UEFI», el PC arranca en modo antiguo: usa la tecla o el botón de la marca (Novo en Lenovo).'
     ] }] },
     { titulo: 'Qué se toca en la BIOS y qué no', grupos: [
-      { titulo: 'Sí, si hace falta:', clase: 'si-toca', items: ['El orden de arranque (mejor: el menú de arranque, que no cambia nada).', 'El arranque seguro (Secure Boot), sabiendo cómo volver a dejarlo.', 'La virtualización (Intel VT-x, AMD-V o SVM).', 'El TPM (Intel PTT, AMD fTPM).'] },
+      { titulo: 'Sí, si hace falta:', clase: 'si-toca', items: ['El orden de arranque (mejor: el menú de arranque, que no cambia nada). Si la placa no deja arrancar desde USB, la opción está en su apartado de arranque (Boot).', 'El arranque seguro (Secure Boot), sabiendo cómo volver a dejarlo.', 'La virtualización (Intel VT-x, AMD-V o SVM).', 'El TPM (Intel PTT, AMD fTPM): suele estar en el apartado de seguridad (Security) o en el avanzado (Advanced).', 'El modo de arranque: UEFI y no el antiguo (Legacy o CSM), en el apartado de arranque (Boot). Con Windows ya instalado no lo cambies: deja de arrancar.'] },
       { titulo: 'No:', clase: 'no-toca', items: ['Las contraseñas de la BIOS: son del dueño o de la empresa.', 'Actualizar la BIOS (Q-Flash, EZ Flash…): si se corta, la placa no arranca.', 'El modo del disco (AHCI, RAID o VMD) con Windows instalado: deja de arrancar.', 'Borrar las claves del arranque seguro.'] }
     ] }
   ],
@@ -1635,7 +1648,7 @@ F1.registrar({
   id: 'U03', tipo: 'diagnostico', icono: 'power',
   titulo: 'El PC no arranca', corto: 'Qué mirar, de lo fácil a lo difícil', tiempo: '5-30 min',
   revisado: 'nov. 2026', version: 'Windows 11 26H2',
-  claves: ['no enciende', 'no arranca', 'pantalla negra', 'pantallazo azul', 'reparación automática', 'bitlocker', 'se apaga', 'pitidos', 'no boot', 'modo seguro', 'inicio avanzado'],
+  claves: ['no enciende', 'no arranca', 'no inicia', 'reparar arranque', 'restaurar sistema', 'pantalla negra', 'pantallazo azul', 'reparación automática', 'bitlocker', 'se apaga', 'pitidos', 'no boot', 'modo seguro', 'inicio avanzado'],
   resumen: 'Responde lo que ves y te digo qué mirar, de lo más probable y barato a lo menos. Casi nada de esto borra datos; lo que puede borrar, sale en rojo y pide antes la copia.',
   inicio: 'boton',
   apunteTitulo: 'No arrancaba',
@@ -1661,7 +1674,11 @@ F1.registrar({
         { texto: 'CPU', sub: 'el procesador o su corriente', corto: 'Luz CPU', ir: 'r-cpu' },
         { texto: 'DRAM', sub: 'la memoria', corto: 'Luz DRAM', ir: 'r-memoria' },
         { texto: 'VGA', sub: 'la gráfica o la salida de vídeo', corto: 'Luz VGA', ir: 'r-salida' },
-        { texto: 'BOOT', sub: 'pasa la prueba, pero no encuentra de dónde arrancar', corto: 'Luz BOOT', ir: 'r-monitor' }] },
+        { texto: 'BOOT', sub: 'pasa la prueba, pero no encuentra de dónde arrancar', corto: 'Luz BOOT', ir: 'luz-boot' }] },
+    'luz-boot': { pregunta: 'Con la luz BOOT, la placa va: ¿qué se ve en la pantalla?', ayuda: 'Esa luz se queda encendida cuando la placa ha pasado sus pruebas y no encuentra de dónde arrancar: en la pantalla debería verse algo.',
+      opciones: [
+        { texto: 'Sigue negra', corto: 'BOOT y pantalla negra', ir: 'r-monitor' },
+        { texto: 'Se ve un mensaje de que no encuentra de dónde arrancar, o la BIOS', corto: 'BOOT y sin arranque', ir: 'r-usb' }] },
     'apaga': { pregunta: '¿Cuándo se apaga?',
       opciones: [
         { texto: 'Al segundo, nada más encender', corto: 'Al segundo', ir: 'r-apaga-ya' },
@@ -1675,7 +1692,7 @@ F1.registrar({
         { texto: 'Se queda en el logo de la marca o en la BIOS', corto: 'Se queda en el logo', ir: 'r-logo' }] },
     'windows': { pregunta: '¿Qué hace Windows?',
       ayuda: 'Las reparaciones están en el {g:inicio avanzado} («Elegir una opción»). Si sale «Reparación automática», pulsa «Opciones avanzadas» y llegas ahí.',
-      mas: { t: 'Si no sale solo: cómo llegar', p: ['Enciende y, cuando salga el logo de Windows, mantén pulsado el botón hasta que se apague. Hazlo dos veces: a la tercera sale «Reparación automática».', 'Si ni así, arranca con un pendrive de instalación de Windows 11 y elige «Reparar mi PC» (la rama «no encuentra de dónde arrancar» lo explica).', 'Si Windows aún arranca a ratos, desde el Terminal: shutdown /r /o /t 0 ({u:U07}).'] },
+      mas: { t: 'Si no sale solo: cómo llegar', p: ['Enciende y, cuando salga el logo de Windows, mantén pulsado el botón hasta que se apague. Hazlo dos veces: a la tercera sale «Reparación automática».', 'Si ni así, arranca con un pendrive de instalación de Windows 11 y elige «Reparar mi PC» (la rama «no encuentra de dónde arrancar» lo explica).', 'Si Windows aún arranca a ratos, desde el Terminal (reinicia al momento: guarda antes lo abierto; está también en {u:U07}): {c:shutdown /r /o /t 0}'] },
       opciones: [
         { texto: 'Empezó justo después de una actualización', corto: 'Tras una actualización', ir: 'r-desinstalar' },
         { texto: 'Sale «Reparación automática» y no pasa de ahí', sub: 'o «Preparando reparación automática» una y otra vez', corto: 'Reparación automática', ir: 'r-qmr' },
@@ -1797,8 +1814,9 @@ F1.registrar({
         'Prueba el disco en otro PC con un adaptador USB: si tampoco sale, el disco ha muerto.',
         'Si tiene datos importantes y no sale en ningún sitio, **no lo abras ni lo formatees**: es para una empresa de recuperación de datos.'],
       si_no: 'r-disco-nuevo' },
-    'r-disco-nuevo': { titulo: 'El disco no responde: cámbialo e instala', riesgo: 'a', aviso: 'los datos de ese disco se dan por perdidos', final: true,
-      hacer: ['Pon un disco nuevo (mejor un SSD) en su sitio.',
+    'r-disco-nuevo': { titulo: 'El disco no responde: cámbialo e instala', riesgo: 'a', aviso: 'el disco de antes no se tira: sus datos, si importan, son para una empresa de recuperación', final: true,
+      hacer: ['Si en el disco que no responde hay datos que importan, **guárdalo tal cual** (ni abrirlo ni formatearlo) para una empresa de recuperación de datos.',
+        'Pon un disco nuevo (mejor un SSD) en su sitio.',
         'Instala Windows en él, de cero.'],
       ir: { u: 'U01', t: 'Sigue en: Instalar Windows 11 desde cero' } },
     'r-bitlocker': { titulo: 'No es una avería: BitLocker pide su clave', riesgo: 'a', aviso: 'sin la clave, los datos del disco no se pueden leer', pregunta: '¿Ha arrancado con la clave?',
@@ -1824,7 +1842,7 @@ F1.registrar({
     'r-bios-defecto': { titulo: 'La BIOS, con sus valores de fábrica', riesgo: 'a', aviso: 'con el disco cifrado, puede pedir la clave de BitLocker al arrancar', pregunta: '¿Arranca ya?',
       hacer: ['Entra en la {g:BIOS} ({u:U02} tiene la tecla de cada marca).',
         'Busca la opción de cargar los valores por defecto (Load Defaults; en muchas, {k:F9}) y guarda y sal.',
-        'Si pide la clave de BitLocker, ten a mano dónde buscarla (la rama «Pide la clave de BitLocker»).'],
+        'Si pide la clave de BitLocker, ten a mano dónde buscarla (la respuesta «Pide una clave de 48 cifras»).'],
       si_no: 'r-pila' },
     'r-pila': { titulo: 'La pila de la placa', riesgo: 'r', aviso: 'hay que abrir el equipo y se borra lo guardado en la BIOS', pregunta: '¿Arranca ya?',
       freno: ['El PC está desenchufado y me he descargado tocando el metal de la caja', 'No está en garantía, o el dueño me deja abrirlo'],
@@ -1891,7 +1909,7 @@ F1.registrar({
   id: 'U04', tipo: 'diagnostico', icono: 'diag',
   titulo: '¿Formatear o restablecer?', corto: 'Cuánto hay que borrar', tiempo: '2 min para decidir',
   revisado: 'nov. 2026', version: 'Windows 11 26H2',
-  claves: ['restablecer', 'formatear', 'reinstalar', 'resetear', 'de fábrica', 'restaurar', 'quitar todo', 'mantener mis archivos', 'vender', 'virus'],
+  claves: ['restablecer', 'formatear', 'reinstalar', 'resetear', 'de fábrica', 'restaurar', 'quitar todo', 'mantener mis archivos', 'vender', 'virus', 'reconstruir', 'recompilar'],
   resumen: 'Antes de preparar el pendrive, decide cuánto hay que borrar: muchas veces no hace falta formatear. Pocas preguntas y, al final, qué hacer y cómo. **La copia, antes, en todos los casos.**',
   inicio: 'arranca',
   apunteTitulo: 'Quería formatear',
@@ -1909,10 +1927,10 @@ F1.registrar({
         { texto: 'Va mal en general', sub: 'fallos raros, errores de Windows, muy lento', corto: 'Va mal en general', ir: 'salud' },
         { texto: 'Un virus que no se va, o cambia de dueño', sub: 'se vende, se regala o pasa a otra persona', corto: 'Virus o cambia de dueño', ir: 'r-quitar' },
         { texto: 'Es por el disco', sub: 'un disco nuevo, o uno que falla', corto: 'El disco', ir: 'disco' }] },
-    'salud': { pregunta: 'Antes, el disco: ¿hace clics, se queda colgado al copiar o hay archivos que no se abren?', ayuda: 'Un disco que se muere también hace que todo vaya lento y con errores, y reinstalar en él lo remata. Si dudas, un programa que lea el estado del disco (SMART) te lo dice en un minuto. Si va lento y aún no has pasado por {u:U09}, pruébalo antes: casi siempre se arregla sin borrar nada.',
+    'salud': { pregunta: 'Antes, el disco: ¿hace clics, se queda colgado al copiar o hay archivos que no se abren?', ayuda: 'Un disco que se muere también hace que todo vaya lento y con errores, y reinstalar en él lo remata. Míralo en Configuración › «Sistema» › «Almacenamiento» › «Configuración avanzada de almacenamiento» › «Discos y volúmenes»: debajo de cada disco pone su estado. Ojo: Windows solo vigila los SSD NVMe; en un disco mecánico o un SSD SATA, «Buen estado» no garantiza nada: manda lo que notes y, si dudas, el programa de diagnóstico de la marca del disco. Si va lento y aún no has pasado por {u:U09}, pruébalo antes: casi siempre se arregla sin borrar nada.',
       opciones: [
         { texto: 'No: hace lo de siempre, pero lento o con avisos de Windows', corto: 'El disco, bien', ir: 'r-reinstalar-wu' },
-        { texto: 'Sí, o el estado del disco no es «bueno»', corto: 'El disco, mal', ir: 'r-disco-falla' }] },
+        { texto: 'Sí, o el estado del disco no es «Buen estado»', corto: 'El disco, mal', ir: 'r-disco-falla' }] },
     'tras-wu': { pregunta: '¿Qué ha pasado con «Reinstalar ahora»?',
       opciones: [
         { texto: 'No me sale esa opción', corto: 'No sale', ir: 'r-reparar-iso' },
@@ -1956,18 +1974,19 @@ F1.registrar({
         'Al acabar, instala los programas que apuntaste.'],
       porque: ['Windows vuelve a estar como recién instalado, pero con los archivos de cada usuario en su sitio.', 'Si el disco está cifrado con BitLocker y lo haces desde el inicio avanzado, pide la clave.'],
       si_no: 'r-quitar' },
-    'r-quitar': { titulo: 'Restablece quitándolo todo', riesgo: 'r', aviso: 'borra los archivos, los programas y la configuración', pregunta: '¿Se arregló?',
+    'r-quitar': { titulo: 'Restablece quitándolo todo', riesgo: 'r', aviso: 'borra los archivos, los programas y la configuración',
       freno: ['Tengo la copia de los datos (también los que guardan los programas) y la he abierto en otro equipo', 'El dueño sabe que se borra todo lo que hay en el PC'],
-      hacer: ['Si Windows arranca: Configuración › «Sistema» › «Recuperación» › «Restablecer este equipo» › «Restablecer el equipo». Si no: «Solucionar problemas» › «Restablecer este equipo». Elige «Quitar todo».',
+      hacer: ['Antes, **desenchufa el disco de la copia** y los demás USB. Si Windows arranca: Configuración › «Sistema» › «Recuperación» › «Restablecer este equipo» › «Restablecer el equipo». Si no: «Solucionar problemas» › «Restablecer este equipo». Elige «Quitar todo».',
         'En «¿Cómo quieres reinstalar Windows?», «Descarga en la nube» (con un virus, siempre esta: trae un Windows limpio).',
         'Si el PC cambia de dueño: en «Configuración adicional», «Cambiar la configuración»: activa limpiar la unidad (tarda horas, pero lo borrado ya no se recupera) y, si tiene más discos, borrarlos todos.',
         'Sigue hasta «Restablecer» y espera.'],
-      porque: 'Sin activar limpiar la unidad, lo borrado se puede recuperar con programas de recuperación: para vender o regalar el PC, no basta.',
+      porque: ['Sin activar limpiar la unidad, lo borrado se puede recuperar con programas de recuperación: para vender o regalar el PC, no basta.',
+        'En un Windows al día, «Recuperación» enseña además «Reconstruir este PC», con el botón «Recompilar el equipo»: limpia los datos y reinstala Windows desde la nube, y empieza reiniciando («Reiniciaremos tu dispositivo, así que guarda tu trabajo»). Sirve para lo mismo que este remedio, pero es nuevo y lo que hace después de reiniciar está sin comprobar: aquí seguimos con «Restablecer este equipo».'],
       pregunta: '¿Ha terminado y va bien?',
       si_no: 'tras-quitar' },
     'r-pieza': { titulo: 'No es Windows: mira las piezas', riesgo: 'v', pregunta: '¿Has encontrado la pieza que falla?',
       hacer: ['Con Windows recién puesto y sigue igual, el fallo es de una pieza o del calor.',
-        'Mira la salud del disco con un programa que lea su estado (SMART) y la temperatura del procesador mientras trabaja.',
+        'Mira la salud del disco («Discos y volúmenes», como en la pregunta del disco; en un disco mecánico, con el programa de diagnóstico de su marca) y si el equipo quema o el ventilador va a tope mientras trabaja.',
         'La memoria se prueba con «Diagnóstico de memoria de Windows» (escribe mdsched en Inicio).'],
       si_no: 'taller' },
     'r-u01': { titulo: 'Instala Windows de cero', riesgo: 'r', aviso: 'borra el disco entero', final: true,
@@ -1999,7 +2018,7 @@ F1.registrar({
       { r: 'v', que: '«Reinstalar ahora» (Windows Update) o la ISO', conserva: 'Archivos, programas y configuración', quita: 'Nada tuyo: cambia los archivos de Windows', tarda: 'Como una actualización grande: una hora o más', necesita: 'Que Windows arranque; Internet (o la ISO del mismo idioma y edición)' },
       { r: 'a', que: 'Restablecer: «Mantener mis archivos»', conserva: 'Los archivos de cada usuario', quita: 'Los programas y la configuración', tarda: 'Una o dos horas', necesita: 'La copia y la lista de programas con sus claves; desde el inicio avanzado, la clave de BitLocker' },
       { r: 'r', que: 'Restablecer: «Quitar todo»', conserva: 'Nada tuyo (lo que traía el fabricante, si lo eliges)', quita: 'Archivos, programas y configuración', tarda: 'Una o dos horas; limpiando la unidad, varias', necesita: 'La copia, abierta en otro equipo; para vender, limpiar la unidad y borrar los demás discos' },
-      { r: 'r', que: 'Instalar de cero ({u:U01})', conserva: 'Nada: borra las particiones', quita: 'Todo, también lo que traía el fabricante', tarda: 'Una hora más la copia', necesita: 'Un pendrive, otro PC y la copia' }],
+      { r: 'r', que: 'Instalar de cero ({u:U01})', conserva: 'Nada: borra las particiones', quita: 'Todo, también lo que traía el fabricante', tarda: 'De una a dos horas, más la copia', necesita: 'Un pendrive, otro PC y la copia' }],
     nota: 'Con un disco que falla, ninguna: primero la copia y cambiar el disco.'
   },
   glosario: {
@@ -2010,7 +2029,7 @@ F1.registrar({
   id: 'U05', tipo: 'guia', icono: 'copia',
   titulo: 'Copia de seguridad antes de formatear', corto: 'Qué salvar, dónde y cómo comprobarlo', tiempo: '30 min + copiar',
   revisado: 'nov. 2026', version: 'Windows 11 26H2',
-  claves: ['copia', 'copia de seguridad', 'backup', 'datos', 'salvar', 'robocopy', 'certificado', 'pfx', 'onedrive', 'contraseñas', 'wifi', 'pst', 'disco externo', 'adaptador usb'],
+  claves: ['copia', 'copia de seguridad', 'backup', 'datos', 'salvar', 'robocopy', 'certificado', 'pfx', 'onedrive', 'contraseñas', 'wifi', 'clave wifi', 'correo', 'outlook', 'favoritos', 'marcadores', 'licencias', 'programas', 'pst', 'disco externo', 'adaptador usb'],
   resumen: 'Todo lo que el dueño va a echar de menos, copiado fuera del PC y **abierto en otro equipo**, antes de borrar nada. No solo los documentos: el navegador, el correo, los certificados, el wifi y la lista de programas.',
   necesitas: [
     'Un **disco USB** (o un pendrive grande) con más espacio libre que lo que vas a copiar',
@@ -2086,7 +2105,7 @@ F1.registrar({
         porque: ['Es lo que más se olvida y lo que más duele: sin él, el dueño no puede hacer trámites con Hacienda, la Seguridad Social o su banco hasta pedir uno nuevo.', '**Firefox** guarda los suyos aparte: en sus ajustes de privacidad y seguridad, Ver certificados › Sus certificados › Hacer copia (sale un .p12, que se importa igual que un .pfx).'],
         fallos: [{ s: '«Exportar la clave privada» sale apagado', r: 'El asistente lo dice: «la clave privada asociada está marcada como no exportable». Al instalarlo no se marcó que se pudiera exportar. No hay forma de sacarlo: el dueño tiene que usar su copia (el archivo que guardó al bajarlo) o pedirlo otra vez a la FNMT, y eso le obliga a acreditarse de nuevo: que haga antes los trámites que tenga pendientes. Díselo antes de formatear.' }] },
       { id: 'p07', riesgo: 'v', titulo: 'El wifi, las licencias y la lista de programas', solo: { arranca: 'si' },
-        hacer: ['Abre el **Terminal como administrador**: botón derecho en Inicio › «Terminal (Administrador)» › «Sí». La clave de cada wifi, a la carpeta de la copia: {c:netsh wlan export profile key=clear folder=E:\\Copia-Ana}',
+        hacer: ['Abre el **Terminal de administrador**: botón derecho en Inicio › «Terminal (Administrador)» › «Sí». La clave de cada wifi, a la carpeta de la copia: {c:netsh wlan export profile key=clear folder=E:\\Copia-Ana}',
           'La **lista de programas**: {c:winget export -o E:\\Copia-Ana\\programas.json}. Avisa de los que no encuentra: apúntalos a mano (Configuración › «Aplicaciones» › «Aplicaciones instaladas»).',
           'Las **licencias**: Office y Windows van en la cuenta Microsoft del dueño; las demás (antivirus, programas de pago), en el correo de la compra o en el programa: apunta cada clave.'],
         porque: ['El archivo del wifi (uno por red, .xml) lleva la clave en claro (por eso key=clear): {u:U06} lo vuelve a meter con una orden. Si solo quieres verla: {c:netsh wlan show profile name="MiWifi" key=clear}, en «Contenido de la clave».', 'Con la lista, {u:U06} instala los mismos programas de una vez (winget import).'],
@@ -2101,15 +2120,15 @@ F1.registrar({
     { titulo: 'La copia', pasos: [
       { id: 'p10', riesgo: 'v', titulo: 'Opción A: con el Explorador, si son pocos archivos', solo: { arranca: 'si' },
         hacer: ['**Elige esta o la siguiente**, no las dos: esta, para unos pocos gigas; la siguiente, para mucho o si se corta.',
-          'Abre dos ventanas: el usuario (C:\\Usuarios\\<nombre>) y E:\\Copia-Ana. Crea dentro una carpeta con el nombre del usuario (Ana) y arrastra a ella sus seis carpetas (o {k:Ctrl+C} y {k:Ctrl+V}). Copia, no muevas.',
+          'Abre dos ventanas: el usuario (C:\\Usuarios\\<nombre>) y E:\\Copia-Ana. Crea dentro una carpeta con el nombre del usuario (Ana) y arrastra a ella sus seis carpetas (o {k:Ctrl+C} y {k:Ctrl+V}) **y, si la hay, su carpeta OneDrive** (la de una empresa, solo con su permiso: el paso de OneDrive): cuando OneDrive guarda el Escritorio y los Documentos, están ahí dentro y no entre las seis. Copia, no muevas.',
           'Si sale «Omitir» en algún archivo, **apúntalo**: no se ha copiado.'] },
       { id: 'p11', riesgo: 'a', aviso: 'escribe el origen y el destino bien: al revés, copia en el PC', titulo: 'Opción B (truco PRO): robocopy, para mucho o si se corta', solo: { arranca: 'si' },
-        hacer: ['Abre el Terminal. Para copiar la carpeta de un usuario sin la de los programas: {c:robocopy "C:\\Users\\Ana" "E:\\Copia-Ana\\Ana" /E /XJ /XD AppData /R:1 /W:1}',
+        hacer: ['Abre el Terminal. Para copiar la carpeta de un usuario sin la de los programas: {c:robocopy "C:\\Users\\Ana" "E:\\Copia-Ana\\Ana" /E /XJ /XD AppData /XF ntuser* /R:1 /W:1}',
           'Cambia **Ana** (las dos veces) por el nombre de la carpeta del usuario y **E:** por la letra de tu disco. Repite con cada usuario y cada disco de datos.',
           'Al final, robocopy da una tabla: en la fila **Archivos**, el Total, lo «Copiado», lo «Omitido» y los «ERROR». Apunta esa tabla: la usas al comprobar.',
           'Si se corta, vuelve a lanzar la misma orden: sigue por donde iba y no copia otra vez lo que ya estaba.'],
-        porque: ['**/E** copia las subcarpetas; **/XJ** se salta los atajos que dan vueltas (Datos de programa…); **/XD AppData**, la carpeta de los programas (lo suyo ya lo copiaste aparte); **/R:1 /W:1**: si un archivo no se lee, lo intenta una vez y sigue (si no, lo reintenta un millón de veces cada 30 s).', '**Nunca /MIR**: «puede tanto ELIMINAR archivos como copiarlos». Con el origen y el destino al revés, borra.'],
-        fallos: [{ s: 'Dice «Acceso denegado» en muchos archivos', r: 'Abre el Terminal como administrador (botón derecho en Inicio) y repite. Si es la carpeta de otro usuario, también.' }],
+        porque: ['**/E** copia las subcarpetas; **/XJ** se salta los atajos que dan vueltas (Datos de programa…); **/XD AppData**, la carpeta de los programas (lo suyo ya lo copiaste aparte); **/XF ntuser***, el registro del usuario (NTUSER.DAT y sus compañeros), que Windows tiene en uso y no deja copiar (daría siempre tres errores) y que no hace falta; **/R:1 /W:1**: si un archivo no se lee, lo intenta una vez y sigue (si no, lo reintenta un millón de veces cada 30 s).', '**Nunca /MIR**: «puede tanto ELIMINAR archivos como copiarlos». Con el origen y el destino al revés, borra.'],
+        fallos: [{ s: 'Dice «Acceso denegado» en muchos archivos', r: 'Abre el Terminal de administrador (botón derecho en Inicio › «Terminal (Administrador)») y repite. Si es la carpeta de otro usuario, también.' }],
         ir: { u: 'U07', fila: 'robocopy', t: 'La orden en la chuleta de comandos' } }
     ] },
     { titulo: 'Si Windows no arranca', pasos: [
@@ -2130,7 +2149,7 @@ F1.registrar({
         hacer: ['Llega a «Elegir una opción» (si no sale solo, {u:U03} explica cómo) › «Solucionar problemas» › «Opciones avanzadas» › «Símbolo del sistema». Si el disco está cifrado, antes pide la clave de {g:BitLocker} («Escribir la clave de recuperación de BitLocker»): el dueño la tiene en **aka.ms/myrecoverykey** (la del mismo Id. que enseña la pantalla); escríbela; si eliges «Omitir esta unidad», queda cerrado y hay que abrirlo con manage-bde (abajo).',
           'Enchufa el disco USB y mira las letras: {c:diskpart}, luego {c:list volume} y {c:exit}. Aquí Windows suele ser D: y el disco USB otra letra (en el ejemplo, F:): búscalos por su tamaño y su nombre.',
           'Mira los usuarios: {c:dir D:\\Users} (el nombre suele ser el principio de su correo). Si sigue cerrado ({c:manage-bde -status} dice «Bloqueado»): {c:manage-bde -unlock D: -RecoveryPassword 000000-000000-000000-000000-000000-000000-000000-000000} con sus 48 cifras.',
-          'Copia cada usuario: {c:robocopy "D:\\Users\\Ana" "F:\\Copia-Ana\\Ana" /E /XJ /XD AppData /R:1 /W:1} y lo de cada programa, cambiando la carpeta: {c:robocopy "D:\\Users\\Ana\\AppData\\Roaming\\Thunderbird" "F:\\Copia-Ana\\Thunderbird" /E /R:1 /W:1}'],
+          'Copia cada usuario: {c:robocopy "D:\\Users\\Ana" "F:\\Copia-Ana\\Ana" /E /XJ /XD AppData /XF ntuser* /R:1 /W:1} y lo de cada programa, cambiando la carpeta: {c:robocopy "D:\\Users\\Ana\\AppData\\Roaming\\Thunderbird" "F:\\Copia-Ana\\Thunderbird" /E /R:1 /W:1}'],
         porque: ['El inicio avanzado trae robocopy, diskpart y manage-bde (comprobado en la ISO 26H2). No trae winget: lo demás se apunta.', 'Para ver carpetas sin escribir órdenes: {c:notepad}, y en el Bloc de notas, Archivo › Abrir hace de explorador (con «Todos los archivos» en el tipo).'],
         fallos: [{ s: 'No llego a «Elegir una opción»', r: 'Arranca con el pendrive de instalación de Windows 11 y elige «Reparar mi PC»: lleva al mismo sitio.', ir: { u: 'U03', nodo: 'windows', t: 'Cómo llegar: El PC no arranca' } }],
         ir: { u: 'U07', fila: 'list-volume', t: 'Las órdenes del inicio avanzado, en la chuleta' } }
@@ -2139,7 +2158,7 @@ F1.registrar({
       { id: 'p14', riesgo: 'r', aviso: 'hasta aquí no se borra nada', titulo: 'Ábrela en otro equipo antes de borrar',
         freno: ['He abierto tres archivos de la copia en otro equipo (o en el móvil) y se ven bien', 'He comparado cuántos archivos son, en el PC y en la copia, y casan'],
         hacer: ['Enchufa la copia en **otro equipo** y abre tres archivos distintos: un documento, una foto y algo del último mes.',
-          'Compara cuántos son: con **robocopy**, en su tabla, la fila Archivos: lo «Copiado» más lo «Omitido» (lo que ya estaba de una pasada anterior) tiene que dar el Total, y los «ERROR», 0. Con el **Explorador**, botón derecho › Propiedades en cada una de las seis carpetas, en el PC y en la copia (no en la del usuario entera: AppData no se copió).',
+          'Compara cuántos son: con **robocopy**, en su tabla, la fila Archivos: lo «Copiado» más lo «Omitido» (lo que ya estaba de una pasada anterior) tiene que dar el Total, y los «ERROR», 0 (si hay alguno, sube por lo que escribió robocopy hasta la línea que dice ERROR: nombra el archivo; suele estar abierto en un programa: ciérralo y repite la orden; si pesa más de 4 GB y el disco USB está en FAT32, no cabe: hace falta un disco en exFAT o NTFS). Con el **Explorador**, botón derecho › Propiedades en cada una de las seis carpetas (y en la de OneDrive, si la copiaste), en el PC y en la copia (no en la del usuario entera: AppData no se copió).',
           'Repasa la lista del dueño (el primer paso): navegador, correo, certificado, wifi, programas.',
           '**El original no se toca hasta aquí.**'],
         porque: 'Una copia sin abrir no es una copia: a veces se queda a medias, vacía o en el disco equivocado sin avisar. Es lo que piden {u:U01} y {u:U04} antes de borrar.' }
@@ -2162,7 +2181,7 @@ F1.registrar({
     '**Correo:** en el servidor, la cuenta; POP en Outlook clásico, el .pst y las firmas; Thunderbird, su perfil.',
     { r: 'a', t: '**Certificado:** certmgr.msc › Personal › «Todas las tareas» › Exportar › «Exportar la clave privada» › .PFX con contraseña.' },
     '**Wifi:** netsh wlan export profile key=clear folder=E:\\Copia-Ana · **Programas:** winget export -o E:\\Copia-Ana\\programas.json · **Licencias**, apuntadas.',
-    '**Copia:** el Explorador, o robocopy "C:\\Users\\Ana" "E:\\Copia-Ana\\Ana" /E /XJ /XD AppData /R:1 /W:1 (nunca /MIR).',
+    '**Copia:** el Explorador, o robocopy "C:\\Users\\Ana" "E:\\Copia-Ana\\Ana" /E /XJ /XD AppData /XF ntuser* /R:1 /W:1 (nunca /MIR).',
     { r: 'r', t: '**Comprobar:** tres archivos abiertos en otro equipo; robocopy, Copiado + Omitido = Total y 0 errores (o carpeta a carpeta). Hasta entonces, no se borra nada.' },
     { tuyo: { arranca: 'no' }, t: '**Sin Windows:** el disco en otro PC con su adaptador (SATA o M.2, NVMe o SATA) o el Símbolo del sistema del inicio avanzado: diskpart › list volume, dir D:\\Users, manage-bde -unlock, robocopy.' }
   ],
@@ -2178,7 +2197,7 @@ F1.registrar({
   id: 'U06', tipo: 'guia', icono: 'ok',
   titulo: 'Puesta a punto después de instalar', corto: 'Al día, seguro y con sus datos', tiempo: '1 h, casi todo esperando',
   revisado: 'nov. 2026', version: 'Windows 11 26H2 · winget',
-  claves: ['puesta a punto', 'controladores', 'drivers', 'actualizar', 'windows update', 'activar', 'winget', 'programas', 'nombre del equipo', 'punto de restauracion', 'entrega', 'devolver datos'],
+  claves: ['puesta a punto', 'controladores', 'drivers', 'actualizar', 'windows update', 'activar', 'licencia', 'antivirus', 'cifrado', 'bitlocker', 'cuenta profesional', 'cuenta de trabajo', 'empresa', 'office', 'microsoft 365', 'winget', 'programas', 'nombre del equipo', 'punto de restauracion', 'entrega', 'devolver datos'],
   resumen: 'Un Windows recién instalado, **al día, con sus controladores, activado, seguro y con los datos y programas del dueño**, listo para entregar. Vale después de {u:U01} o de restablecer.',
   necesitas: [
     'El PC con Windows recién instalado (o restablecido) e **Internet**',
@@ -2187,13 +2206,14 @@ F1.registrar({
     'El dueño delante al final, para la entrega'
   ],
   caso: [
-    { id: 'cuenta', pregunta: '¿Con qué cuenta entra el dueño?',
-      opciones: [{ v: 'ms', t: 'Cuenta Microsoft' }, { v: 'local', t: 'Cuenta local' }],
-      ayuda: 'Con cuenta Microsoft, la clave del cifrado se guarda sola en ella; con cuenta local, hay que guardarla a mano.' },
+    { id: 'cuenta', pregunta: '¿Qué cuenta usa el dueño?',
+      opciones: [{ v: 'ms', t: 'Cuenta Microsoft' }, { v: 'local', t: 'Cuenta local' }, { v: 'trabajo', t: 'Cuenta profesional o educativa' }],
+      ayuda: 'Con cuenta Microsoft, la clave del cifrado se guarda sola en ella; con cuenta local, hay que guardarla a mano. La cuenta profesional o educativa es la del trabajo o del centro (Microsoft 365): en ella manda la organización.' },
     { id: 'datos', pregunta: '¿Hay una copia de datos que devolver?',
       opciones: [{ v: 'si', t: 'Sí, la de la copia antes de formatear' }, { v: 'no', t: 'No (PC nuevo o sin datos)' }] }
   ],
   avisos: [
+    { solo: { cuenta: 'trabajo' }, color: 'ambar', t: '**Un PC de una empresa o de un centro.** Antes de conectar nada, pregunta a quien lleve sus cuentas (su informático, la empresa que les da servicio o, en una empresa pequeña, quien contrató Microsoft 365) cómo lo quieren: muchos equipos los configura la propia organización, y unirlo por tu cuenta puede dejarlo a medias. Lo tuyo: dejarlo al día y conectar la cuenta **como te digan**. Si nadie lo lleva, conecta solo la cuenta: no unas el equipo.' },
     { color: 'azul', t: '**Las órdenes** llevan un botón **Copiar**. Si lees en el móvil, copia en el móvil: en el PC, escríbela tal cual (o abre F1 en el PC). Cambia lo del ejemplo: **Ana** por el usuario y **E:** por la letra del disco de la copia (E:\\Copia-Ana, la carpeta de {u:U05}).' }
   ],
   fases: [
@@ -2222,8 +2242,17 @@ F1.registrar({
           'Un nombre corto, sin espacios ni tildes, que diga de quién o de dónde es (por ejemplo, ANA-PORTATIL o RECEPCION-01).',
           'Pide reiniciar: puedes hacerlo al final, con otro reinicio.'],
         porque: ['Windows le pone uno al azar (DESKTOP-…). En una red con varios equipos, o al buscarlo en el router, se agradece saber cuál es.', '**Ojo:** algunos programas de pago (facturación, gestión) atan su licencia al nombre del equipo. Si el dueño tiene uno, pregunta a su soporte antes de cambiarlo, o deja el nombre de antes.'] },
+      { id: 'q14', riesgo: 'a', aviso: 'unir el equipo a la organización le da el control: solo si te lo piden', solo: { cuenta: 'trabajo' }, titulo: 'Conecta la cuenta del trabajo o del centro',
+        hacer: ['Pregunta antes qué quieren: **solo la cuenta** (para el correo, Office y OneDrive) o **unir el equipo** a la organización. Lo segundo lo decide, y lo suele hacer, su informático.',
+          'Configuración › «Cuentas» › «Obtener acceso a trabajo o escuela» y, en «Agregar una cuenta de trabajo o escuela», «Conectar».',
+          'En «Configurar una cuenta profesional o educativa», que el dueño escriba su correo del trabajo o del centro y «Siguiente»; después, su contraseña. Windows avisa de que «es posible que su trabajo o escuela controle algunos aspectos de este dispositivo».',
+          '**No pulses** «Unir este dispositivo a Microsoft Entra ID» (el directorio de la organización) ni lo del dominio, si no te lo han pedido: esa opción «configurará el dispositivo como perteneciente a su organización y le concederá a esta control total sobre él».',
+          'Si al entrar pide un PIN o aceptar normas de la organización, eso lo acepta el dueño. Otra cosa es que pregunte si dejas que la organización administre el dispositivo: si no te lo han pedido, ahí di que no (solo la cuenta).'],
+        porque: 'Con la cuenta conectada, Office, OneDrive y el correo entran con ella; en Windows se sigue entrando con la cuenta del equipo (la que se creó al instalar). Unir el equipo es otra cosa: la organización pasa a mandar en él (contraseñas, cifrado, programas) y deshacerlo no siempre es fácil.',
+        fallos: [{ s: 'No deja conectar, o dice que una directiva lo impide', r: 'Lo ha cerrado la organización, o esa cuenta no tiene permiso para este equipo. No insistas: avisa a su informático con el mensaje tal cual.' }] },
       { id: 'q05', riesgo: 'v', titulo: 'Los programas, de una vez con winget',
-        hacer: [{ solo: { datos: 'si' }, t: 'Los del dueño, con la lista de la copia. En el Terminal: {c:winget import -i E:\\Copia-Ana\\programas.json --ignore-unavailable --accept-package-agreements --accept-source-agreements} (cambia E: por la letra del disco de la copia).' },
+        hacer: [{ solo: { cuenta: 'trabajo' }, t: 'Office, con la cuenta de trabajo: que el dueño entre con ella en **office.com** y lo instale desde ahí, si su licencia lo incluye (o como diga su informático): así lleva su licencia.' },
+          { solo: { datos: 'si' }, t: 'Los del dueño, con la lista de la copia. En el Terminal: {c:winget import -i E:\\Copia-Ana\\programas.json --ignore-unavailable --accept-package-agreements --accept-source-agreements} (cambia E: por la letra del disco de la copia).' },
           'Los básicos que falten, uno por línea: {c:winget install -e --id 7zip.7zip} · {c:winget install -e --id VideoLAN.VLC} · si no tiene Office, {c:winget install -e --id TheDocumentFoundation.LibreOffice}.',
           'El navegador que use el dueño, si no es Edge: {c:winget install -e --id Google.Chrome} o {c:winget install -e --id Mozilla.Firefox.es-ES}.',
           'Lo que no esté en winget (el programa de la gestoría, uno de pago), de su web, con la clave que apuntaste.'],
@@ -2243,13 +2272,14 @@ F1.registrar({
         porque: 'El antivirus de Windows viene incluido y se actualiza con Windows Update: no hace falta otro.' },
       { id: 'q08', riesgo: 'a', aviso: 'sin la clave, los datos pueden quedarse cerrados', titulo: 'El cifrado, decidido y con su clave guardada',
         hacer: ['Configuración › «Privacidad y seguridad» › «Cifrado del dispositivo» (en Pro, también «Cifrado de unidad BitLocker» en el Panel de control). Si no sale, el PC no cifra solo.',
-          { solo: { cuenta: 'ms' }, t: 'Si está activado, la clave ya está en la cuenta Microsoft del dueño: que lo compruebe en **account.microsoft.com/devicerecoverykeys**.' },
-          { solo: { cuenta: 'local' }, t: 'Con cuenta local, la clave no se guarda sola en ningún sitio. Si está activado: Panel de control › «Cifrado de unidad BitLocker» › «Copia de seguridad de la clave de recuperación», a un pendrive o impresa, para el dueño.' },
+          { solo: { cuenta: 'ms' }, t: 'Si está activado, la clave ya está en la cuenta Microsoft del dueño: que lo compruebe en **aka.ms/myrecoverykey**.' },
+          { solo: { cuenta: 'local' }, t: 'Con cuenta local, la clave no se guarda sola en ningún sitio. Si está activado: Panel de control › «Cifrado de unidad BitLocker» › «Copia de seguridad de la clave de recuperación», a un pendrive o impresa, para el dueño. En Windows Home no hay ese panel: la clave la enseña, en el Terminal de administrador, {c:manage-bde -protectors -get C:} (apúntala en papel).' },
+          { solo: { cuenta: 'trabajo' }, t: 'Con cuenta profesional, la clave se guarda en la organización cuando el equipo se une a ella: el dueño la ve en **aka.ms/aadrecoverykey** y su informático, en su panel. Si está activado y el equipo no está unido, guárdala como con una cuenta local (Panel de control › «Cifrado de unidad BitLocker» › «Copia de seguridad de la clave de recuperación»; en Windows Home, la orden manage-bde -protectors -get C:) y dásela a quien lleve sus cuentas.' },
           'Para mirarlo con una orden: {c:manage-bde -status C:} («Estado de protección»).',
           '**Nunca** dejes un disco cifrado sin su clave guardada fuera del PC.'],
         porque: 'Windows 11 cifra el disco solo en muchos PC. Si un día pide la clave (al tocar la BIOS o cambiar una pieza) y nadie la tiene, los datos no se recuperan.' },
-      { id: 'q09', riesgo: 'v', titulo: 'Una cuenta estándar para el día a día (si el dueño quiere)',
-        hacer: ['Configuración › «Cuentas» › «Otros usuarios» › «Agregar otro usuario» › «Agregar cuenta»: crea una cuenta local de **administrador para el dueño** (por ejemplo, Admin-Ana) con una contraseña que guarda **él**, en papel. No dejes una cuenta tuya en su PC.',
+      { id: 'q09', riesgo: 'v', solo: { cuenta: ['ms', 'local'] }, titulo: 'Una cuenta estándar para el día a día (si el dueño quiere)',
+        hacer: ['Configuración › «Cuentas» › «Otros usuarios» › «Agregar otro usuario» › «Agregar cuenta». Cuando pida un correo: «No tengo los datos de inicio de sesión de esta persona» › «Agregar un usuario sin cuenta Microsoft». Así creas una cuenta local de **administrador para el dueño** (por ejemplo, Admin-Ana) con una contraseña que guarda **él**, en papel. No dejes una cuenta tuya en su PC.',
           'Hazla administradora: en «Otros usuarios», Admin-Ana › «Cambiar el tipo de cuenta» › «Administrador». Entra una vez con ella y, desde ahí, en la cuenta de todos los días: «Cambiar el tipo de cuenta» › «Usuario estándar».',
           'Explícaselo al dueño: cuando un programa pida permiso, Windows le pedirá la contraseña de Admin-Ana.'],
         porque: 'Con una cuenta estándar, un programa malicioso no se instala solo: tiene que pedir permiso. Es lo que se hace en empresas y en el aula. En casa, decide el dueño.' },
@@ -2267,14 +2297,14 @@ F1.registrar({
           'Devuelve (el primer **Ana** es la carpeta de la copia; el segundo, la que salió en dir): {c:robocopy "E:\\Copia-Ana\\Ana" "C:\\Users\\Ana" /E /XF ntuser* /XD AppData "OneDrive*" /R:1 /W:1}',
           '**OneDrive:** que el dueño inicie sesión en OneDrive (el de la empresa, con la cuenta de la empresa) y deje que baje solo. No pegues encima la carpeta OneDrive de la copia (la orden se la salta): si después falta algo, cópialo a mano.',
           'Lo que había fuera de su carpeta (C:\\, otros discos), a su sitio con el Explorador.'],
-        porque: ['**/XF ntuser*** deja fuera el registro del usuario viejo (NTUSER.DAT): pegado encima del nuevo, estropea el perfil. **/XD AppData "OneDrive*"**, lo que ya vuelve por su lado (también «OneDrive - Empresa»).', 'Al revés (de C: a E:) no borra nada, pero copia en el sitio equivocado: mira el orden antes de pulsar Intro.'],
+        porque: ['**/XF ntuser*** deja fuera el registro del usuario viejo (NTUSER.DAT): pegado encima del nuevo, estropea el perfil. **/XD AppData** y las carpetas "OneDrive*" (también «OneDrive - Empresa»), lo que ya vuelve por su lado.', 'Al revés (de C: a E:) no borra nada, pero copia en el sitio equivocado: mira el orden antes de pulsar Intro.'],
         ir: { u: 'U05', paso: 'p11', t: 'Cómo se hizo la copia' } },
       { id: 'q12', riesgo: 'a', aviso: 'el .csv y los .xml llevan contraseñas en claro', titulo: 'Lo de los programas: wifi, certificado, navegador, correo', solo: { datos: 'si' },
-        hacer: ['El **wifi**: en E:\\Copia-Ana hay un .xml por red (Wi-Fi-NombreDeLaRed.xml). En el Terminal como administrador, uno por uno: {c:netsh wlan add profile filename="E:\\Copia-Ana\\Wi-Fi-MiCasa.xml"} («Se agregó el perfil…»).',
+        hacer: ['El **wifi**: en E:\\Copia-Ana hay un .xml por red (Wi-Fi-NombreDeLaRed.xml). En el Terminal de administrador (botón derecho en Inicio › «Terminal (Administrador)»), uno por uno: {c:netsh wlan add profile filename="E:\\Copia-Ana\\Wi-Fi-MiCasa.xml"} («Se agregó el perfil…»).',
           'El **certificado**: doble clic en el .pfx (o el .p12 de Firefox) › «Usuario actual» › su contraseña › marca «Marcar esta clave como exportable…» › siguiente hasta terminar. En Firefox, se importa desde sus ajustes de certificados.',
           'El **navegador**: el dueño inicia sesión; o importa en su configuración los favoritos (.html) y las contraseñas (.csv). **Firefox** y **Thunderbird**: ábrelos una vez y ciérralos. En la copia, entra en Profiles y luego en la carpeta que acaba en .default-release (o .default): copia **lo de dentro** a la carpeta que acaba igual en %APPDATA%\\Mozilla\\Firefox\\Profiles (o %APPDATA%\\Thunderbird\\Profiles), y acepta reemplazar.',
           'El **correo**: la cuenta en su programa; un .pst, en Outlook clásico, Archivo › Abrir y exportar › Importar o exportar; las firmas, a %APPDATA%\\Microsoft\\Signatures. Un **programa de facturación**: restaura su copia con su propio programa.',
-          'Al acabar, **borra el .csv y los .xml** del disco de la copia (y de donde los hayas pegado).'],
+          'Cuando el dueño haya comprobado que entra en todo (el paso siguiente), borra de E:\\Copia-Ana **el .csv de las contraseñas y los Wi-Fi-….xml** (solo esos, no otros .xml que tenga el dueño), y de donde los hayas pegado.'],
         porque: 'Al importar el certificado, «Marcar esta clave como exportable» deja hacer la próxima copia (lo dice la Agencia Tributaria). Sin marcarla, la próxima vez no se podrá exportar.' },
       { id: 'q13', riesgo: 'v', titulo: 'Prueba lo que el dueño va a usar',
         hacer: ['Que el dueño entre con su cuenta y abra **lo que más usa**: su correo, su programa, un documento.',
@@ -2284,13 +2314,13 @@ F1.registrar({
     ] }
   ],
   final: ['Windows Update: «¡Todo está actualizado!».', 'Administrador de dispositivos: sin triángulos amarillos.', 'Activación: «Activo».', 'Seguridad de Windows: todo en verde y un solo antivirus.',
-    'Si el disco está cifrado, su clave está guardada fuera del PC.', 'Hay un punto de restauración de hoy.', { solo: { datos: 'si' }, t: 'Los datos están en su sitio y se abren; el .csv de contraseñas y los .xml del wifi, borrados.' },
-    'Los programas del dueño, instalados y abiertos; el de facturación, con sus datos.', 'El dueño entra con su cuenta y sabe su contraseña o su PIN.'],
+    'Si el disco está cifrado, su clave está guardada fuera del PC.', 'Hay un punto de restauración de hoy.', { solo: { datos: 'si' }, t: 'Los datos están en su sitio y se abren; el .csv de contraseñas y los Wi-Fi-….xml, borrados.' },
+    'Los programas del dueño, instalados y abiertos; el de facturación, con sus datos.', { solo: { cuenta: 'trabajo' }, t: 'La cuenta del trabajo o del centro está conectada como pidió quien lleva sus cuentas, y sabe que el equipo está listo.' }, 'El dueño entra con su cuenta y sabe su contraseña o su PIN.'],
   finTitulo: 'La lista de entrega', finTexto: 'Antes de devolver el equipo, comprueba cada punto con el dueño delante.',
   finListo: 'Al día, seguro y con sus cosas: equipo entregado.',
   despues: ['Si algo deja de ir bien, {u:U07} tiene las órdenes para mirarlo.', 'Si tu pendrive de técnico aún no tiene el **instalar.cmd** con tus winget de siempre, hazlo ahora.'],
   chuleta: [
-    '**Windows Update** hasta «¡Todo está actualizado!» · «Opciones avanzadas» › «Actualizaciones opcionales».',
+    '**Windows Update** hasta «¡Todo está actualizado!» · «Opciones avanzadas» › «Opciones adicionales» › «Actualizaciones opcionales».',
     '**Controladores:** Administrador de dispositivos sin triángulos · lo que falte, de la web del fabricante (nunca «actualizadores»).',
     '**Activación:** «Sistema» › «Activación» › «Activo» · o slmgr /xpr.',
     '**Nombre:** «Sistema» › «Información» › «Cambiar el nombre de este equipo».',
@@ -2298,9 +2328,10 @@ F1.registrar({
     { r: 'a', t: '**Sobra:** «Aplicaciones instaladas» y «Aplicaciones» › «Inicio», con cabeza. Nada de optimizadores.' },
     '**Seguridad de Windows** en verde, un solo antivirus.',
     { r: 'a', t: '**Cifrado:** «Cifrado del dispositivo» · la clave, en la cuenta Microsoft o en papel.' },
-    '**Cuenta estándar** para el día a día, si el dueño quiere.',
+    { tuyo: { cuenta: 'trabajo' }, r: 'a', t: '**Cuenta de trabajo:** pregunta antes a su informático · «Cuentas» › «Obtener acceso a trabajo o escuela» › «Conectar» · no «Unir este dispositivo a Microsoft Entra ID» si no te lo piden · la clave del cifrado: con el equipo unido, en aka.ms/aadrecoverykey; si no, guardada a mano.' },
+    '**Cuenta estándar** para el día a día, si el dueño quiere (en un equipo de empresa, lo decide su informático).',
     '**Punto de restauración:** «Protección del sistema» › «Configurar» › «Activar protección del sistema» › «Crear».',
-    { tuyo: { datos: 'si' }, r: 'a', t: '**Datos:** el dueño entra primero · dir C:\\Users · robocopy de E:\\Copia-Ana al usuario con /XF ntuser* /XD AppData OneDrive · netsh wlan add profile · el .pfx con «Marcar esta clave como exportable» · borra el .csv y los .xml.' }
+    { tuyo: { datos: 'si' }, r: 'a', t: '**Datos:** el dueño entra primero · dir C:\\Users · robocopy de E:\\Copia-Ana al usuario con /XF ntuser* /XD AppData "OneDrive*" · netsh wlan add profile · el .pfx con «Marcar esta clave como exportable» · borra el .csv de las contraseñas y los Wi-Fi-….xml (solo esos).' }
   ],
   glosario: {}
 });
@@ -2308,7 +2339,7 @@ F1.registrar({
   id: 'U07', tipo: 'chuleta', icono: 'terminal', ordenes: true,
   titulo: 'Comandos de emergencia', corto: 'Las órdenes que salvan el día, con su riesgo', tiempo: '10 s',
   revisado: 'nov. 2026', version: 'Windows 11 26H2',
-  claves: ['cmd', 'terminal', 'consola', 'simbolo del sistema', 'sfc', 'dism', 'chkdsk', 'diskpart', 'ipconfig', 'ping', 'netsh', 'shutdown', 'bitlocker', 'manage-bde', 'slmgr', 'robocopy', 'winget', 'comandos', 'ordenes'],
+  claves: ['cmd', 'terminal', 'consola', 'powershell', 'comando', 'clave wifi', 'simbolo del sistema', 'sfc', 'dism', 'chkdsk', 'diskpart', 'ipconfig', 'ping', 'netsh', 'shutdown', 'bitlocker', 'manage-bde', 'slmgr', 'robocopy', 'winget', 'comandos', 'ordenes'],
   intro: 'Cada orden con lo que hace, **desde dónde** se escribe y su riesgo. En el PC, toca **Copiar** y pégala en la consola con {k:Ctrl+V} (o botón derecho). **En el móvil, Copiar copia en el móvil:** escríbela en el PC tal cual. Cambia lo que va en el ejemplo (la letra, el nombre) por lo tuyo.',
   buscaTexto: 'Busca: red, disco, reparar, bitlocker…',
   vacio: 'No sale nada. Prueba con lo que quieres hacer (reparar, red, disco, apagar) o con el nombre de la orden.',
@@ -2321,40 +2352,40 @@ F1.registrar({
     { id: 'cuentas', titulo: 'Usuarios, licencia y programas' }
   ],
   filas: [
-    { id: 'dism-check', grupo: 'reparar', sit: '¿Está marcada como dañada la imagen de Windows?', orden: 'DISM /Online /Cleanup-Image /CheckHealth', hace: 'Solo mira. «No se detectaron daños en el almacén de componentes.» o «El almacén de componentes puede repararse.»', donde: 'Terminal (administrador)', tarda: 'segundos', riesgo: 'v' },
-    { id: 'dism-restore', grupo: 'reparar', sit: 'Windows va raro, falla al actualizar o sfc no repara', orden: 'DISM /Online /Cleanup-Image /RestoreHealth', hace: 'Busca daños en el almacén de componentes y los repara con archivos de Windows Update. Al final: «La operación de restauración finalizó correctamente.»', donde: 'Terminal (administrador), con Internet', tarda: '10-30 min', riesgo: 'a', nota: 'Puede parecer parado un buen rato: es normal, espera. Sin Internet: «No se encontró el contenido de reparación en ningún lugar.»' },
-    { id: 'sfc', grupo: 'reparar', sit: 'Archivos de Windows dañados (errores raros, cosas que no abren)', orden: 'sfc /scannow', hace: 'Comprueba los archivos protegidos de Windows y cambia los malos por buenos. Si dice «encontró archivos dañados y los reparó correctamente», reinicia.', donde: 'Terminal (administrador)', tarda: '10-20 min', riesgo: 'a', nota: 'Si dice «algunos no se pudieron reparar», haz antes DISM /RestoreHealth y repite. El detalle, en C:\\Windows\\Logs\\CBS\\CBS.log.' },
-    { id: 'sfc-verify', grupo: 'reparar', sit: 'Solo mirar si hay archivos de Windows dañados', orden: 'sfc /verifyonly', hace: 'Comprueba lo mismo «pero no realiza ninguna reparación».', donde: 'Terminal (administrador)', tarda: '10-20 min', riesgo: 'v' },
+    { id: 'dism-check', grupo: 'reparar', sit: '¿Está marcada como dañada la imagen de Windows?', orden: 'DISM /Online /Cleanup-Image /CheckHealth', hace: 'Solo mira. «No se detectaron daños en el almacén de componentes.» o «El almacén de componentes puede repararse.»', donde: 'Terminal de administrador', tarda: 'segundos', riesgo: 'v' },
+    { id: 'dism-restore', grupo: 'reparar', sit: 'Windows va raro, falla al actualizar o sfc no repara', orden: 'DISM /Online /Cleanup-Image /RestoreHealth', hace: 'Busca daños en el almacén de componentes y los repara con archivos de Windows Update. Al final: «La operación de restauración finalizó correctamente.»', donde: 'Terminal de administrador, con Internet', tarda: '10-30 min', riesgo: 'a', nota: 'Puede parecer parado un buen rato: es normal, espera. Sin Internet: «No se encontró el contenido de reparación en ningún lugar.»' },
+    { id: 'sfc', grupo: 'reparar', sit: 'Archivos de Windows dañados (errores raros, cosas que no abren)', orden: 'sfc /scannow', hace: 'Comprueba los archivos protegidos de Windows y cambia los malos por buenos. Si dice «encontró archivos dañados y los reparó correctamente», reinicia.', donde: 'Terminal de administrador', tarda: '10-20 min', riesgo: 'a', nota: 'Si dice «algunos no se pudieron reparar», haz antes DISM /RestoreHealth y repite. El detalle, en C:\\Windows\\Logs\\CBS\\CBS.log.' },
+    { id: 'sfc-verify', grupo: 'reparar', sit: 'Solo mirar si hay archivos de Windows dañados', orden: 'sfc /verifyonly', hace: 'Comprueba lo mismo «pero no realiza ninguna reparación».', donde: 'Terminal de administrador', tarda: '10-20 min', riesgo: 'v' },
     { id: 'sfc-off', grupo: 'reparar', sit: 'Windows no arranca: reparar sus archivos desde fuera', orden: 'sfc /scannow /offbootdir=D:\\ /offwindir=D:\\Windows', hace: 'Lo mismo que sfc /scannow, sobre el Windows del disco sin arrancarlo.', donde: 'Símbolo del sistema del inicio avanzado', tarda: '10-30 min', riesgo: 'a', nota: 'Allí Windows suele ser D: (en el ejemplo); míralo antes con list volume y cámbialo en las dos partes.' },
-    { id: 'dism-wiminfo', grupo: 'reparar', sit: 'Sin Internet: ¿qué número tiene mi edición en la ISO?', orden: 'DISM /Get-WimInfo /WimFile:H:\\sources\\install.wim', hace: 'Lista las ediciones de la ISO con su número (Índice): en la ISO de Microsoft, Windows 11 Pro es el 6 y Home, el 1.', donde: 'Terminal (administrador) o inicio avanzado', tarda: 'segundos', riesgo: 'v', nota: 'H: es la ISO abierta con doble clic (o el pendrive de Rufus): cambia la letra por la suya. El de Media Creation Tool trae install.esd y no sirve aquí: usa la ISO.' },
-    { id: 'dism-iso', grupo: 'reparar', sit: 'Reparar el almacén sin Internet, con la ISO', orden: 'DISM /Online /Cleanup-Image /RestoreHealth /Source:WIM:H:\\sources\\install.wim:6 /LimitAccess', hace: 'Lo mismo que /RestoreHealth, sacando los archivos buenos de la ISO en vez de Windows Update.', donde: 'Terminal (administrador)', tarda: '10-30 min', riesgo: 'a', nota: 'La ISO, de la misma versión de Windows; el número del final, el de su edición (la fila de antes). Después, sfc /scannow.' },
+    { id: 'dism-wiminfo', grupo: 'reparar', sit: 'Sin Internet: ¿qué número tiene mi edición en la ISO?', orden: 'DISM /Get-WimInfo /WimFile:H:\\sources\\install.wim', hace: 'Lista las ediciones de la ISO con su número (Índice): en la ISO de Microsoft, Windows 11 Pro es el 6 y Home, el 1.', donde: 'Terminal de administrador o inicio avanzado', tarda: 'segundos', riesgo: 'v', nota: 'H: es la ISO abierta con doble clic (o el pendrive de Rufus): cambia la letra por la suya. El de Media Creation Tool trae install.esd y no sirve aquí: usa la ISO.' },
+    { id: 'dism-iso', grupo: 'reparar', sit: 'Reparar el almacén sin Internet, con la ISO', orden: 'DISM /Online /Cleanup-Image /RestoreHealth /Source:WIM:H:\\sources\\install.wim:6 /LimitAccess', hace: 'Lo mismo que /RestoreHealth, sacando los archivos buenos de la ISO en vez de Windows Update.', donde: 'Terminal de administrador', tarda: '10-30 min', riesgo: 'a', nota: 'La ISO, de la misma versión de Windows; el número del final, el de su edición (la fila de antes). Después, sfc /scannow.' },
     { id: 'dism-off', grupo: 'reparar', sit: 'Windows no arranca: reparar el almacén desde fuera', orden: ['mkdir D:\\Scratch', 'DISM /Image:D:\\ /Cleanup-Image /RestoreHealth /Source:WIM:H:\\sources\\install.wim:6 /LimitAccess /ScratchDir:D:\\Scratch'], hace: 'Repara el almacén del Windows de D: con la ISO (allí no hay Internet ni vale /Online). /ScratchDir le da sitio en D: para trabajar.', donde: 'Símbolo del sistema del inicio avanzado', tarda: '15-40 min', riesgo: 'a', nota: 'D:, el Windows del disco; H:, el pendrive con la ISO (míralos con list volume). Después, sfc desde fuera (la fila de «Windows no arranca: reparar sus archivos»).' },
-    { id: 'list-volume', grupo: 'disco', sit: 'Ver los discos y sus letras (también en el inicio avanzado)', orden: ['diskpart', 'list disk', 'list volume', 'exit'], hace: 'Abre diskpart, enseña los discos («Núm Disco», «Tamaño») y los volúmenes con su letra («Ltr»), y sale.', donde: 'Terminal (administrador) o Símbolo del sistema del inicio avanzado', tarda: 'segundos', riesgo: 'v', nota: 'Solo esas cuatro: list solo mira. No escribas nada más dentro de diskpart si no sabes lo que hace.' },
-    { id: 'chkdsk-ver', grupo: 'disco', sit: '¿Tiene errores el sistema de archivos?', orden: 'chkdsk C:', hace: 'Sin /f solo mira: «Se examinó el sistema de archivos sin encontrar problemas.» o la lista de lo que hay mal.', donde: 'Terminal (administrador)', tarda: '1-10 min', riesgo: 'v' },
-    { id: 'chkdsk-f', grupo: 'disco', sit: 'Corregir errores del sistema de archivos', orden: 'chkdsk C: /f', hace: '«Corrige los errores del disco.» En C: pregunta si lo programa para el siguiente reinicio: S y reinicia.', donde: 'Terminal (administrador)', tarda: '5-30 min al reiniciar', riesgo: 'a', aviso: 'En un disco que hace ruidos o se cuelga, antes la copia ({u:U05}).' },
-    { id: 'chkdsk-r', grupo: 'disco', sit: 'Buscar sectores defectuosos y recuperar lo legible', orden: 'chkdsk D: /r', hace: '«Encuentra sectores defectuosos y recupera la información legible»: lee y escribe el disco entero.', donde: 'Terminal (administrador)', tarda: 'horas', riesgo: 'r', aviso: 'En un disco que se muere puede acabar de romperlo: **primero la copia** ({u:U05}). Con datos valiosos y un disco que no se lee, a una empresa de recuperación.' },
-    { id: 'bde-status', grupo: 'disco', sit: '¿Está cifrado con BitLocker? ¿Bloqueado?', orden: 'manage-bde -status', hace: 'Por cada unidad: «Estado de conversión» («Cifrado completo», o «Cifrado solo de espacio usado», que también es estar cifrado), «Estado de protección» y «Estado de bloqueo» (Bloqueado o Desbloqueado).', donde: 'Terminal (administrador) o Símbolo del sistema del inicio avanzado', tarda: 'segundos', riesgo: 'v' },
+    { id: 'list-volume', grupo: 'disco', sit: 'Ver los discos y sus letras (también en el inicio avanzado)', orden: ['diskpart', 'list disk', 'list volume', 'exit'], hace: 'Abre diskpart, enseña los discos («Núm Disco», «Tamaño») y los volúmenes con su letra («Ltr»), y sale.', donde: 'Terminal de administrador o Símbolo del sistema del inicio avanzado', tarda: 'segundos', riesgo: 'v', nota: 'Solo esas cuatro: list solo mira. No escribas nada más dentro de diskpart si no sabes lo que hace.' },
+    { id: 'chkdsk-ver', grupo: 'disco', sit: '¿Tiene errores el sistema de archivos?', orden: 'chkdsk C:', hace: 'Sin /f solo mira: «Se examinó el sistema de archivos sin encontrar problemas.» o la lista de lo que hay mal.', donde: 'Terminal de administrador', tarda: '1-10 min', riesgo: 'v' },
+    { id: 'chkdsk-f', grupo: 'disco', sit: 'Corregir errores del sistema de archivos', orden: 'chkdsk C: /f', hace: '«Corrige los errores del disco.» En C: pregunta si lo programa para el siguiente reinicio: S y reinicia.', donde: 'Terminal de administrador', tarda: '5-30 min al reiniciar', riesgo: 'a', aviso: 'En un disco que hace ruidos o se cuelga, antes la copia ({u:U05}).' },
+    { id: 'chkdsk-r', grupo: 'disco', sit: 'Buscar sectores defectuosos y recuperar lo legible', orden: 'chkdsk D: /r', hace: '«Encuentra sectores defectuosos y recupera la información legible»: lee y escribe el disco entero.', donde: 'Terminal de administrador', tarda: 'horas', riesgo: 'r', aviso: 'En un disco que se muere puede acabar de romperlo: **primero la copia** ({u:U05}). Con datos valiosos y un disco que no se lee, a una empresa de recuperación.' },
+    { id: 'bde-status', grupo: 'disco', sit: '¿Está cifrado con BitLocker? ¿Bloqueado?', orden: 'manage-bde -status', hace: 'Por cada unidad: «Estado de conversión» («Cifrado completo», o «Cifrado solo de espacio usado», que también es estar cifrado), «Estado de protección» y «Estado de bloqueo» (Bloqueado o Desbloqueado).', donde: 'Terminal de administrador o Símbolo del sistema del inicio avanzado', tarda: 'segundos', riesgo: 'v' },
     { id: 'bde-unlock', grupo: 'disco', sit: 'Abrir un disco cifrado con su clave de recuperación', orden: 'manage-bde -unlock D: -RecoveryPassword 000000-000000-000000-000000-000000-000000-000000-000000', hace: 'Lo abre para leerlo hasta que se apague: «La contraseña desbloqueó correctamente el volumen D:». No cambia lo que hay dentro.', donde: 'Símbolo del sistema del inicio avanzado (o el Terminal, con un disco de otro PC)', tarda: 'segundos', riesgo: 'a', nota: 'Las 48 cifras, de aka.ms/myrecoverykey (la cuenta Microsoft del dueño). Cambia D: por la letra del disco.' },
-    { id: 'robocopy', grupo: 'disco', sit: 'Copiar una carpeta grande sin que se pare', orden: 'robocopy "C:\\Users\\Ana" "E:\\Copia-Ana\\Ana" /E /XJ /XD AppData /R:1 /W:1', hace: 'Copia la carpeta con sus subcarpetas, se salta los puntos de unión y AppData y no se atasca en un archivo. Al final, la tabla con lo «Copiado» y los «ERROR».', donde: 'Terminal o Símbolo del sistema del inicio avanzado', tarda: 'lo que ocupe', riesgo: 'a', aviso: 'Mira el orden: primero de dónde y luego a dónde. **Nunca /MIR**: «puede tanto ELIMINAR archivos como copiarlos».', nota: 'Si se corta, repítela: sigue por donde iba. En el inicio avanzado, Windows suele ser D:. Lo explica {u:U05}; la vuelta, {u:U06}.' },
+    { id: 'robocopy', grupo: 'disco', sit: 'Copiar una carpeta grande sin que se pare', orden: 'robocopy "C:\\Users\\Ana" "E:\\Copia-Ana\\Ana" /E /XJ /XD AppData /XF ntuser* /R:1 /W:1', hace: 'Copia la carpeta con sus subcarpetas, se salta los puntos de unión, AppData y el registro del usuario (ntuser*, siempre en uso) y no se atasca en un archivo. Al final, la tabla con lo «Copiado» y los «ERROR».', donde: 'Terminal o Símbolo del sistema del inicio avanzado', tarda: 'lo que ocupe', riesgo: 'a', aviso: 'Mira el orden: primero de dónde y luego a dónde. **Nunca /MIR**: «puede tanto ELIMINAR archivos como copiarlos».', nota: 'Si se corta, repítela: sigue por donde iba. En el inicio avanzado, Windows suele ser D:. Lo explica {u:U05}; la vuelta, {u:U06}.' },
     { id: 'clean', grupo: 'disco', sit: 'Borrar un disco entero (particiones y todo)', orden: 'clean', hace: 'Dentro de diskpart, con un disco elegido (select disk N): «Elimina cualquier formato de volumen o partición del disco». No hay vuelta atrás.', donde: 'diskpart (Terminal de administrador o inicio avanzado)', tarda: 'segundos', riesgo: 'r', aviso: 'Con el select disk equivocado, borras el que no era. Míralo por el tamaño con list disk. Lo explica, paso a paso, {u:U11}.' },
-    { id: 'format', grupo: 'disco', sit: 'Formatear una unidad (un pendrive, un disco de datos)', orden: 'format G: /FS:NTFS /Q /V:Datos', hace: 'Borra la unidad G: y la deja en NTFS (rápido, con la etiqueta Datos). Para un pendrive que vaya a cualquier aparato, /FS:exFAT.', donde: 'Terminal (administrador)', tarda: 'segundos (/Q)', riesgo: 'r', aviso: 'Borra lo que haya en esa letra: compruébala antes en «Este equipo» (en el inicio avanzado, con list volume) y que no sea el disco de la copia. {u:U11} lo explica.' },
+    { id: 'format', grupo: 'disco', sit: 'Formatear una unidad (un pendrive, un disco de datos)', orden: 'format G: /FS:NTFS /Q /V:Datos', hace: 'Borra la unidad G: y la deja en NTFS (rápido, con la etiqueta Datos). Para un pendrive que vaya a cualquier aparato, /FS:exFAT.', donde: 'Terminal de administrador', tarda: 'segundos (/Q)', riesgo: 'r', aviso: 'Borra lo que haya en esa letra: compruébala antes en «Este equipo» (en el inicio avanzado, con list volume) y que no sea el disco de la copia. {u:U11} lo explica.' },
     { id: 'ipconfig-all', grupo: 'red', sit: '¿Qué dirección tengo? ¿Me llega la red?', orden: 'ipconfig /all', hace: 'Por cada adaptador: «Dirección IPv4», «Puerta de enlace predeterminada», «Servidores DNS» y «Dirección física».', donde: 'Terminal', tarda: 'segundos', riesgo: 'v', nota: '«Estado de los medios: medios desconectados»: el cable no está enchufado o el wifi no está conectado. Una IPv4 que empieza por 169.254 («Dirección IPv4 de configuración automática»): el router no le ha dado dirección.' },
     { id: 'ping', grupo: 'red', sit: '¿Llego a Internet? ¿Y al router?', orden: ['ping 8.8.8.8', 'ping www.google.es'], hace: '«Respuesta desde…» es que llega; «Tiempo de espera agotado para esta solicitud.», que no. Si la IP responde y el nombre no, falla el DNS.', donde: 'Terminal', tarda: 'segundos', riesgo: 'v', nota: 'Para el router, ping a la «Puerta de enlace predeterminada» de ipconfig. Para pararlo, {k:Ctrl+C}.' },
     { id: 'tracert', grupo: 'red', sit: '¿Dónde se corta el camino?', orden: 'tracert www.google.es', hace: 'Enseña cada salto hasta el destino; donde empiezan los asteriscos, se corta.', donde: 'Terminal', tarda: '30 s - 2 min', riesgo: 'v' },
     { id: 'nslookup', grupo: 'red', sit: '¿Funciona el DNS?', orden: 'nslookup www.google.es', hace: 'Pregunta al DNS la dirección de un nombre: «Servidor:» es quién responde y «Nombre:» y la dirección, la respuesta.', donde: 'Terminal', tarda: 'segundos', riesgo: 'v' },
-    { id: 'flushdns', grupo: 'red', sit: 'Una web ha cambiado de sitio y no carga', orden: 'ipconfig /flushdns', hace: 'Borra las direcciones que Windows recordaba: «Se vació correctamente la caché de resolución de DNS.»', donde: 'Terminal (administrador)', tarda: 'segundos', riesgo: 'a', nota: 'No rompe nada: las vuelve a preguntar.' },
-    { id: 'renew', grupo: 'red', sit: 'Pedir al router otra dirección', orden: ['ipconfig /release', 'ipconfig /renew'], hace: 'Suelta la dirección y pide una nueva.', donde: 'Terminal (administrador)', tarda: 'segundos', riesgo: 'a', nota: 'Corta la red unos segundos: no lo hagas por escritorio remoto.' },
-    { id: 'winsock', grupo: 'red', sit: 'Hay red pero ningún programa navega', orden: 'netsh winsock reset', hace: 'Deja el catálogo Winsock limpio: «El catálogo Winsock se restableció correctamente. Debe reiniciar el equipo…»', donde: 'Terminal (administrador)', tarda: 'segundos + reiniciar', riesgo: 'a', nota: 'Puede que haya que reinstalar una VPN o un antivirus que se metía ahí.' },
-    { id: 'wifi-export', grupo: 'red', sit: 'Guardar todos los wifi con su clave (antes de formatear)', orden: 'netsh wlan export profile key=clear folder=E:\\Copia-Ana', hace: 'Un archivo .xml por red, con su clave: «Perfil de interfaz … correctamente guardado en el archivo …».', donde: 'Terminal (administrador)', tarda: 'segundos', riesgo: 'a', nota: 'Los .xml llevan la clave en claro: bórralos al terminar. Lo explica {u:U05}.' },
-    { id: 'wifi-add', grupo: 'red', sit: 'Devolver un wifi guardado (después de instalar)', orden: 'netsh wlan add profile filename="E:\\Copia-Ana\\Wi-Fi-MiCasa.xml"', hace: 'Mete esa red con su clave: «Se agregó el perfil … a la interfaz …».', donde: 'Terminal (administrador)', tarda: 'segundos', riesgo: 'a', nota: 'Uno por archivo: mira sus nombres en la carpeta. Lo explica {u:U06}.' },
-    { id: 'wifi-clave', grupo: 'red', sit: 'Ver la clave de un wifi guardado', orden: 'netsh wlan show profile name="MiWifi" key=clear', hace: 'Enseña ese perfil; la clave, en «Contenido de la clave». Sin name=, la lista de los guardados.', donde: 'Terminal (administrador)', tarda: 'segundos', riesgo: 'v', nota: 'Cambia MiWifi por el nombre de la red.' },
+    { id: 'flushdns', grupo: 'red', sit: 'Una web ha cambiado de sitio y no carga', orden: 'ipconfig /flushdns', hace: 'Borra las direcciones que Windows recordaba: «Se vació correctamente la caché de resolución de DNS.»', donde: 'Terminal de administrador', tarda: 'segundos', riesgo: 'a', nota: 'No rompe nada: las vuelve a preguntar.' },
+    { id: 'renew', grupo: 'red', sit: 'Pedir al router otra dirección', orden: ['ipconfig /release', 'ipconfig /renew'], hace: 'Suelta la dirección y pide una nueva.', donde: 'Terminal de administrador', tarda: 'segundos', riesgo: 'a', nota: 'Corta la red unos segundos: no lo hagas por escritorio remoto.' },
+    { id: 'winsock', grupo: 'red', sit: 'Hay red pero ningún programa navega', orden: 'netsh winsock reset', hace: 'Deja el catálogo Winsock limpio: «El catálogo Winsock se restableció correctamente. Debe reiniciar el equipo…»', donde: 'Terminal de administrador', tarda: 'segundos + reiniciar', riesgo: 'a', nota: 'Puede que haya que reinstalar una VPN o un antivirus que se metía ahí.' },
+    { id: 'wifi-export', grupo: 'red', sit: 'Guardar todos los wifi con su clave (antes de formatear)', orden: 'netsh wlan export profile key=clear folder=E:\\Copia-Ana', hace: 'Un archivo .xml por red, con su clave: «Perfil de interfaz … correctamente guardado en el archivo …».', donde: 'Terminal de administrador', tarda: 'segundos', riesgo: 'a', nota: 'Los .xml llevan la clave en claro: bórralos al terminar. Lo explica {u:U05}.' },
+    { id: 'wifi-add', grupo: 'red', sit: 'Devolver un wifi guardado (después de instalar)', orden: 'netsh wlan add profile filename="E:\\Copia-Ana\\Wi-Fi-MiCasa.xml"', hace: 'Mete esa red con su clave: «Se agregó el perfil … a la interfaz …».', donde: 'Terminal de administrador', tarda: 'segundos', riesgo: 'a', nota: 'Uno por archivo: mira sus nombres en la carpeta. Lo explica {u:U06}.' },
+    { id: 'wifi-clave', grupo: 'red', sit: 'Ver la clave de un wifi guardado', orden: 'netsh wlan show profile name="MiWifi" key=clear', hace: 'Enseña ese perfil; la clave, en «Contenido de la clave». Sin name=, la lista de los guardados.', donde: 'Terminal de administrador', tarda: 'segundos', riesgo: 'v', nota: 'Cambia MiWifi por el nombre de la red.' },
     { id: 'winver', grupo: 'sistema', sit: '¿Qué Windows tiene?', orden: 'winver', hace: 'Abre una ventana con la versión (26H2…) y la compilación.', donde: 'Terminal o {k:Win+R}', tarda: 'segundos', riesgo: 'v' },
     { id: 'systeminfo', grupo: 'sistema', sit: 'Ficha rápida del PC', orden: 'systeminfo', hace: '«Nombre de host», «Nombre del sistema operativo», «Fecha de instalación original», «Fabricante del sistema», «Modelo del sistema», «Memoria física total»…', donde: 'Terminal', tarda: '10-30 s', riesgo: 'v' },
     { id: 'msinfo32', grupo: 'sistema', sit: 'Todo el detalle del equipo (BIOS, modo UEFI, piezas)', orden: 'msinfo32', hace: 'Abre «Información del sistema»: el modelo, la versión de la BIOS, «Modo de BIOS» (UEFI) y «Estado de arranque seguro»…', donde: 'Terminal o {k:Win+R}', tarda: 'segundos', riesgo: 'v' },
     { id: 'tasklist', grupo: 'sistema', sit: '¿Qué está abierto?', orden: 'tasklist', hace: 'La lista de procesos: «Nombre de imagen», su PID y su «Uso de memoria».', donde: 'Terminal', tarda: 'segundos', riesgo: 'v' },
     { id: 'taskkill', grupo: 'sistema', sit: 'Cerrar un programa colgado', orden: 'taskkill /im programa.exe /f', hace: 'Lo cierra a la fuerza: «Correcto: se terminó el proceso…». Lo que no se guardó, se pierde.', donde: 'Terminal', tarda: 'segundos', riesgo: 'a', nota: 'El nombre, de tasklist. No cierres los que no conoces (svchost, csrss…): Windows se reinicia.' },
-    { id: 'shutdown-o', grupo: 'sistema', sit: 'Reiniciar al inicio avanzado («Elegir una opción»)', orden: 'shutdown /r /o /t 0', hace: '«Vaya al menú de opciones avanzadas de arranque y reinicie el ordenador.» Desde ahí, reparar, restaurar o el Símbolo del sistema.', donde: 'Terminal', tarda: 'al momento', riesgo: 'a', nota: 'Reinicia ya (/t 0): guarda antes lo abierto. Lo usan {u:U03} y {u:U04}.' },
-    { id: 'shutdown-fw', grupo: 'sistema', sit: 'Reiniciar directo a la BIOS (UEFI)', orden: 'shutdown /r /fw /t 0', hace: 'Reinicia y entra en la configuración de la placa sin buscar la tecla.', donde: 'Terminal (administrador)', tarda: 'al momento', riesgo: 'a', nota: 'Solo en PC con UEFI. Si no, la tecla de su marca: {u:U02}.' },
+    { id: 'shutdown-o', grupo: 'sistema', sit: 'Reiniciar al inicio avanzado («Elegir una opción»)', orden: 'shutdown /r /o /t 0', hace: '«Vaya al menú de opciones avanzadas de arranque y reinicie el ordenador.» Desde ahí, reparar, restaurar o el Símbolo del sistema.', donde: 'Terminal', tarda: 'al momento', riesgo: 'a', nota: 'Reinicia ya (/t 0): guarda antes lo abierto. Lo usa {u:U03}.' },
+    { id: 'shutdown-fw', grupo: 'sistema', sit: 'Reiniciar directo a la BIOS (UEFI)', orden: 'shutdown /r /fw /t 0', hace: 'Reinicia y entra en la configuración de la placa sin buscar la tecla.', donde: 'Terminal de administrador', tarda: 'al momento', riesgo: 'a', nota: 'Solo en PC con UEFI. Si no, la tecla de su marca: {u:U02}.' },
     { id: 'shutdown-s', grupo: 'sistema', sit: 'Apagar del todo (sin el inicio rápido)', orden: 'shutdown /s /t 0', hace: 'Apaga el equipo ya. Con /r reinicia. Con /a se anula un apagado que va a pasar.', donde: 'Terminal', tarda: 'al momento', riesgo: 'a' },
     { id: 'whoami', grupo: 'cuentas', sit: '¿Con qué usuario estoy?', orden: 'whoami', hace: 'El equipo y el usuario: equipo\\usuario.', donde: 'Terminal', tarda: 'segundos', riesgo: 'v' },
     { id: 'dir-users', grupo: 'cuentas', sit: '¿Cómo se llama la carpeta de cada usuario?', orden: 'dir C:\\Users', hace: 'Las carpetas de los usuarios (Public es de Windows; Default va oculta). En el inicio avanzado, con la letra de Windows (D:\\Users).', donde: 'Terminal o Símbolo del sistema del inicio avanzado', tarda: 'segundos', riesgo: 'v' },
@@ -2382,7 +2413,7 @@ F1.registrar({
   id: 'U08', tipo: 'diagnostico', icono: 'red',
   titulo: 'Sin Internet', corto: 'De abajo arriba: el cable, la wifi, la dirección, el DNS', tiempo: '5-20 min',
   revisado: 'nov. 2026', version: 'Windows 11 26H2',
-  claves: ['internet', 'wifi', 'red', 'sin acceso a internet', 'red no identificada', 'dns', 'ip', '169.254', 'router', 'proxy', 'vpn', 'modo avion', 'no navega', 'ethernet', 'cable de red'],
+  claves: ['internet', 'wifi', 'red', 'conexion', 'no conecta', 'navegador', 'sin acceso a internet', 'red no identificada', 'dns', 'ip', '169.254', 'router', 'proxy', 'vpn', 'modo avion', 'no navega', 'ethernet', 'cable de red'],
   resumen: 'Responde lo que ves y te llevo capa a capa, de abajo arriba: primero si es solo este equipo, luego el cable o la wifi, la dirección, el router y los nombres. Nada de esto borra tus archivos. **Las órdenes llevan Copiar:** si lees en el móvil (lo normal, si el PC no navega), copia en el móvil: en el PC, escríbelas tal cual.',
   inicio: 'quien',
   apunteTitulo: 'No navegaba',
@@ -2414,7 +2445,7 @@ F1.registrar({
         { texto: 'Empieza por 169.254, o no sale ninguna', corto: 'Sin dirección (169.254)', ir: 'r-renovar' },
         { texto: 'Otra (192.168…, 10…, 172…)', sub: 'y sale también una puerta de enlace', corto: 'Tiene dirección', ir: 'puerta' },
         { texto: 'Otra, pero sin puerta de enlace con puntos', sub: 'vacía, o solo una que empieza por fe80::', corto: 'Sin puerta de enlace', ir: 'r-router-uno' }] },
-    'puerta': { pregunta: '¿Responde el router?', ayuda: 'En el Terminal, ping y la «Puerta de enlace predeterminada» de ipconfig: {c:ping 192.168.1.1} (cambia el número por el tuyo).',
+    'puerta': { pregunta: '¿Responde el router?', ayuda: 'En el Terminal, escribe **ping** y la «Puerta de enlace predeterminada» que te dio ipconfig (por ejemplo, ping 192.168.1.1). El número es el tuyo: por eso esta orden no lleva botón de copiar.',
       opciones: [
         { texto: '«Respuesta desde» el número del router, con un tiempo', corto: 'El router responde', ir: 'salida' },
         { texto: '«Tiempo de espera agotado para esta solicitud.»', sub: 'o «Host de destino inaccesible.», aunque delante ponga «Respuesta desde» tu propia dirección', corto: 'El router no responde', ir: 'r-reconectar' }] },
@@ -2422,6 +2453,10 @@ F1.registrar({
       opciones: [
         { texto: '«Respuesta desde 8.8.8.8…»', corto: 'Sale por número', ir: 'nombres' },
         { texto: '«Tiempo de espera agotado para esta solicitud.»', sub: 'o «Host de destino inaccesible.»', corto: 'No sale por número', ir: 'r-vpn' }] },
+    'solo-este': { pregunta: '¿Los demás aparatos de esa red sí salen a Internet?', ayuda: 'El router responde, pero no se sale: o es la línea (les pasa a todos) o es este equipo. Prueba con el móvil en esa wifi, sin datos móviles.',
+      opciones: [
+        { texto: 'Sí: solo falla este equipo', corto: 'Los demás salen', ir: 'r-reset-red' },
+        { texto: 'No, o no tengo con qué probar', sub: 'mira también las luces del router: la de Internet apagada o en rojo suele ser la línea', corto: 'Nadie sale', ir: 'r-router' }] },
     'nombres': { pregunta: '¿Y por nombre?', ayuda: 'Lo mismo, con un nombre: {c:ping www.google.es}',
       opciones: [
         { texto: '«Respuesta desde…»', sub: 'la red va: falla el navegador o algo de este equipo', corto: 'Resuelve nombres', ir: 'r-hora' },
@@ -2523,7 +2558,7 @@ F1.registrar({
       hacer: ['Si hay una VPN (Configuración › «Red e Internet» › «VPN», o un programa de VPN), desconéctala.',
         'Si hay un antivirus o un cortafuegos que no es el de Windows, desactívalo un minuto para probar y vuelve a activarlo. En un equipo de empresa o de un centro, no lo toques: avisa a su informático.',
         'Si los demás navegan y este no, puede que el router lo bloquee: un control parental o la lista de equipos permitidos. Eso se mira en el router, con su contraseña.'],
-      si_no: 'r-reset-red' },
+      si_no: 'solo-este' },
     'r-flushdns': { titulo: 'Vacía la caché de nombres', riesgo: 'a', aviso: 'no rompe nada: Windows vuelve a preguntar los nombres', pregunta: '¿Resuelve ya los nombres?',
       hacer: ['En el Terminal de administrador (botón derecho en Inicio › «Terminal (Administrador)»): {c:ipconfig /flushdns}. Sin administrador dice «La operación solicitada requiere elevación.»',
         'Debe decir «Se vació correctamente la caché de resolución de DNS.»',
@@ -2546,6 +2581,7 @@ F1.registrar({
       hacer: ['Configuración › «Red e Internet» › «Proxy».',
         'En casa, lo normal: «Detectar la configuración automáticamente», activado; y en «Configuración manual del proxy», «Usar un servidor proxy», desactivado.',
         'Si había uno que nadie sabe de dónde salió, puede ser un programa malicioso: pasa después un examen completo ({u:U09} lo explica).'],
+      ir: { u: 'U09', nodo: 'r-examen', t: 'El examen completo, en El PC va lento' },
       si_no: 'r-winsock' },
     'r-winsock': { titulo: 'Restablece Winsock', riesgo: 'a', aviso: 'pide reiniciar; puede que haya que reinstalar una VPN', pregunta: '¿Navega ya, después de reiniciar?',
       hacer: ['En el Terminal de administrador: {c:netsh winsock reset}',
@@ -2586,7 +2622,7 @@ F1.registrar({
   id: 'U09', tipo: 'diagnostico', icono: 'lento',
   titulo: 'El PC va lento', corto: 'Medir antes de tocar, de lo barato a lo caro', tiempo: '10-40 min',
   revisado: 'nov. 2026', version: 'Windows 11 26H2',
-  claves: ['lento', 'va lento', 'rendimiento', 'administrador de tareas', 'cpu', 'memoria', 'ram', 'disco al 100', 'disco lleno', 'arranque lento', 'inicio', 'virus', 'calor', 'ventilador', 'ssd'],
+  claves: ['lento', 'va lento', 'tarda', 'se cuelga', 'antivirus', 'disco duro', 'rendimiento', 'administrador de tareas', 'cpu', 'memoria', 'ram', 'disco al 100', 'disco lleno', 'arranque lento', 'inicio', 'virus', 'calor', 'ventilador', 'ssd'],
   resumen: 'Responde lo que ves y te llevo de lo más probable y barato a lo menos. Antes de tocar nada, se mide con el Administrador de tareas. **Nada de «optimizadores», limpiadores del registro ni apagar servicios al azar:** no aceleran y pueden romper Windows. Si el disco avisa de que falla, eso va lo primero.',
   inicio: 'desde',
   apunteTitulo: 'Iba lento',
@@ -2620,9 +2656,9 @@ F1.registrar({
       opciones: [
         { texto: '«HDD»', sub: 'un disco mecánico', corto: 'Disco mecánico', ir: 'r-disco-hdd' },
         { texto: '«SSD»', corto: 'SSD', ir: 'r-disco-ssd' }] },
-    'salud': { pregunta: '¿Qué dice el «Estado de la unidad» del disco?', ayuda: 'Configuración › «Sistema» › «Almacenamiento» › «Configuración avanzada de almacenamiento» › «Discos y volúmenes»: debajo del disco pone su estado; en sus «Propiedades», «Estado de la unidad» dice además la «Vida restante estimada». Si quieres mirar también el sistema de archivos, sin cambiar nada, en el Terminal de administrador: {c:chkdsk C:}',
+    'salud': { pregunta: '¿Qué dice el «Estado de la unidad» del disco?', ayuda: 'Configuración › «Sistema» › «Almacenamiento» › «Configuración avanzada de almacenamiento» › «Discos y volúmenes»: debajo del disco pone su estado; en un SSD NVMe, sus «Propiedades» dicen además la «Vida restante estimada». **Ojo:** Windows solo vigila los SSD NVMe; en un disco mecánico o un SSD SATA, «Buen estado» no garantiza nada: fíate de lo que notes (clics, cuelgues al copiar, archivos que no se abren) y, si dudas, pasa el programa de diagnóstico de la marca del disco. Para mirar el sistema de archivos sin cambiar nada, en el Terminal de administrador: {c:chkdsk C:}',
       opciones: [
-        { texto: '«Buen estado», y es un «HDD»', sub: 'y no hace ruidos raros', corto: 'HDD sano', ir: 'r-ssd' },
+        { texto: '«Buen estado», y es un «HDD»', sub: 'y no hace clics ni se cuelga al copiar', corto: 'HDD sano', ir: 'r-ssd' },
         { texto: '«Buen estado», y es un «SSD»', corto: 'SSD sano', ir: 'r-lleno' },
         { texto: '«Advertencia» o «En mal estado»', sub: 'o hace clics, se queda colgado al copiar, o chkdsk encontró problemas', corto: 'Disco que falla', ir: 'r-disco-falla' }] }
   },
@@ -2632,7 +2668,7 @@ F1.registrar({
         'Ni optimizar, ni desfragmentar, ni **chkdsk /r** (la orden que repara sectores): escribir mucho en un disco que falla lo acaba de romper.',
         'Después, cámbialo por uno nuevo (mejor un SSD): si aún se lee entero, se puede clonar ({u:U10}); si no, se instala Windows de cero en el nuevo.',
         'Si está cifrado con BitLocker, ten su clave antes de sacarlo a otro equipo ({u:U05} lo explica).',
-        'Para confirmarlo: Configuración › «Sistema» › «Almacenamiento» › «Configuración avanzada de almacenamiento» › «Discos y volúmenes» › las propiedades del disco, «Estado de la unidad».'],
+        'Para confirmarlo: Configuración › «Sistema» › «Almacenamiento» › «Configuración avanzada de almacenamiento» › «Discos y volúmenes» › las propiedades del disco, «Estado de la unidad» (solo en los SSD NVMe; en los demás, mandan los síntomas).'],
       porque: 'Un disco que se muere hace que todo vaya lento (Windows reintenta leer lo que no se lee). Ningún arreglo de Windows lo cura, y cada hora de uso puede perder más datos.',
       ir: { u: 'U05', t: 'La copia, ya: copia de seguridad' } },
     'r-esperar': { titulo: 'Recién instalado: deja que Windows termine', riesgo: 'v', pregunta: '¿Va bien ya?',
@@ -2703,7 +2739,7 @@ F1.registrar({
         'Menos cosas al arrancar: «Aplicaciones de arranque» › «Deshabilitar» lo que sobre (no lo de la marca ni el antivirus).'],
       si_no: 'salud' },
     'r-ssd': { titulo: 'Cámbialo por un SSD', riesgo: 'a', aviso: 'hay que abrir el equipo, y clonar borra lo que haya en el SSD nuevo', final: true,
-      hacer: ['Un SSD de la misma capacidad o mayor: de 2,5 pulgadas (el de los portátiles; en un sobremesa, con un soporte en el hueco de 3,5) o M.2, si la placa o el portátil tienen esa ranura (lo dice su manual). Se cambia con el equipo apagado y desenchufado.',
+      hacer: ['Un SSD de la misma capacidad o mayor (uno menor solo vale como explica {u:U10}): de 2,5 pulgadas (el de los portátiles; en un sobremesa, con un soporte en el hueco de 3,5) o M.2, si la placa o el portátil tienen esa ranura (lo dice su manual). Se cambia con el equipo apagado y desenchufado.',
         'Antes, la copia de lo importante ({u:U05}); si encontraste un programa malicioso, límpialo antes: el clon lo copiaría.',
         'Si el disco de ahora está sano, se clona entero al SSD: Windows, programas y archivos, tal cual. Cómo, paso a paso: {u:U10}.'],
       ir: { u: 'U10', t: 'Sigue en: Clonar un disco a un SSD' } },
@@ -2736,7 +2772,7 @@ F1.registrar({
       porque: 'Examina antes de que arranque Windows, cuando un programa malicioso no se puede esconder.',
       si_no: 'r-reinstalar' },
     'r-reinstalar': { titulo: 'Si nada lo arregla: reinstalar Windows', riesgo: 'a', aviso: 'lo que sigue puede borrar datos: primero, la copia', final: true,
-      hacer: ['Lo siguiente es reinstalar: primero sin perder nada («Reinstalar ahora», con Windows Update) y, si no basta, restablecer. la utilidad siguiente empieza por mirar el disco: en un disco que falla no se reinstala.',
+      hacer: ['Lo siguiente es reinstalar: primero sin perder nada («Reinstalar ahora», con Windows Update) y, si no basta, restablecer. Antes se mira el disco (la pregunta siguiente lo hace): en un disco que falla no se reinstala.',
         'Antes, la copia de lo importante ({u:U05}).'],
       ir: { u: 'U04', nodo: 'salud', t: 'Decide: ¿formatear o restablecer?' } }
   },
@@ -2746,7 +2782,7 @@ F1.registrar({
   id: 'U10', tipo: 'guia', icono: 'clonar',
   titulo: 'Clonar un disco a un SSD', corto: 'Windows tal cual, en un disco nuevo', tiempo: '1-3 h, casi todo esperando',
   revisado: 'nov. 2026', version: 'Windows 11 26H2 · Rescuezilla 2.6.2',
-  claves: ['clonar', 'clon', 'ssd', 'disco', 'cambiar disco', 'hdd', 'm.2', 'nvme', 'sata', 'rescuezilla', 'clonezilla', 'migrar', 'data migration', 'acronis', 'extender volumen', 'bitlocker'],
+  claves: ['clonar', 'clon', 'ssd', 'disco', 'disco duro', 'samsung', 'kingston', 'cambiar disco', 'hdd', 'm.2', 'nvme', 'sata', 'rescuezilla', 'clonezilla', 'migrar', 'data migration', 'acronis', 'extender volumen', 'bitlocker'],
   resumen: 'Pasar el disco entero (Windows, programas y archivos, tal cual) a un SSD nuevo, cambiarlo y arrancar desde él. **Si eliges bien el origen y el destino, el disco de ahora no se toca**: si algo sale mal, se vuelve a poner y está todo.',
   necesitas: [
     'El **SSD nuevo**, del tipo que admite el equipo (el paso de qué SSD cabe lo explica)',
@@ -2768,7 +2804,7 @@ F1.registrar({
       ayuda: 'El tamaño del disco entero y lo ocupado, en «Este equipo» (botón derecho en C: › Propiedades) y en «Discos y volúmenes».' },
     { id: 'marca', pregunta: '¿El fabricante del SSD da su programa de clonar?',
       opciones: [{ v: 'si', t: 'Sí (Samsung, Kingston, WD, Crucial…)' }, { v: 'no', t: 'No, o no lo sé' }],
-      ayuda: 'Míralo en la web de la marca del SSD, en su apartado de software o de soporte. Si no lo encuentras, di que no. **El de WD no clona a un disco por USB**: con un SSD WD y un solo hueco, di que no.' }
+      ayuda: 'Míralo en la web de la marca del SSD, en su apartado de software o de soporte. Si no lo encuentras, di que no. **Con un solo hueco (el SSD por USB), ojo:** el de WD no clona a un disco por USB y el de Kingston pide su SSD dentro del equipo: con uno de esos, di que no.' }
   ],
   derivar: function (c) {
     c.herr = c.marca === 'si' ? 'marca' : (c.cabe === 'mayor' ? 'rz' : (c.cabe ? 'ninguna' : null));
@@ -2798,8 +2834,8 @@ F1.registrar({
         ir: { u: 'U05', t: 'Cómo: Copia de seguridad antes de formatear' } },
       { id: 'c03', riesgo: 'a', aviso: 'un disco que falla puede no acabar de clonarse', titulo: 'La salud del disco de ahora',
         hacer: ['Configuración › «Sistema» › «Almacenamiento» › «Configuración avanzada de almacenamiento» › «Discos y volúmenes». Debajo del nombre de cada disco sale su estado.',
-          'Con «Buen estado», sigue. Con «Advertencia: se detectaron problemas» (o hace clics, o se cuelga al copiar), **la copia primero** y clona después, si se deja.',
-          'En su «Propiedades», apunta «Multimedia» (SSD o HDD), la «Capacidad» y el «Estilo de partición» (GPT o MBR): lo usarás en el primer arranque. Ahí mismo, «Estado de la unidad» enseña la vida restante estimada.'],
+          'Con «Advertencia» o «En mal estado» (o si hace clics o se cuelga al copiar), **la copia primero** y clona después, si se deja. «Buen estado» solo es de fiar en un SSD NVMe: en un disco mecánico o un SSD SATA, Windows no mide la salud, así que manda lo que notes (clics, cuelgues, archivos que no se abren).',
+          'En su «Propiedades», apunta «Multimedia» (SSD o HDD), la «Capacidad» y el «Estilo de partición» (GPT o MBR): lo usarás en el primer arranque. Ahí mismo, en un SSD NVMe, «Estado de la unidad» enseña la vida restante estimada.'],
         porque: 'Clonar lee el disco entero. Si tiene sectores que no se leen, el programa se para o deja el clon a medias.',
         ir: { u: 'U09', nodo: 'salud', t: 'Si va mal: la salud del disco, en El PC va lento' } },
       { id: 'c04', riesgo: 'v', titulo: 'Qué SSD cabe en el equipo',
@@ -2810,7 +2846,7 @@ F1.registrar({
           { solo: { cabe: 'mayor' }, t: 'El tamaño: igual o mayor que el disco de ahora entero. Lo que sobre se aprovecha al final.' },
           { solo: { cabe: ['menor', 'no'] }, t: 'El tamaño: más pequeño que el de ahora **solo** vale con el programa de la marca del SSD, y con lo ocupado por debajo de lo que tiene el SSD y sitio de sobra (un 20 %).' }],
         porque: 'Un disco mecánico es lo que más frena un Windows 11. Un SSD de cualquier tipo lo nota; uno M.2 NVMe, más.' },
-      { id: 'c05', riesgo: 'a', aviso: 'borra solo lo que el dueño diga', titulo: 'Libera espacio hasta que quepa', solo: { cabe: 'no' },
+      { id: 'c05', riesgo: 'a', aviso: 'borra solo lo que el dueño diga', titulo: 'Libera espacio hasta que quepa', solo: { cabe: 'no', clona: 'si' },
         hacer: ['Configuración › «Sistema» › «Almacenamiento»: «Recomendaciones de limpieza» y los archivos temporales.',
           'Pasa a un disco externo lo grande que el dueño no use a diario (vídeos, fotos de años) **después** de la copia ({u:U05}), con su permiso.',
           'Sigue hasta que lo ocupado sea, como mucho, el 80 % del tamaño del SSD. Si no se llega, el SSD es pequeño: uno mayor, o instala de cero ({u:U01}).'],
@@ -2852,21 +2888,24 @@ F1.registrar({
         fallos: [{ s: 'No sale en la Administración de discos', r: 'Por USB: otro puerto, y que la caja sea del tipo del SSD. Dentro: apaga y desenchufa, y mira el cable de corriente y el de datos (SATA), o que la ranura M.2 sea de ese tipo (el manual).' }] }
     ] },
     { titulo: 'Clonar', pasos: [
-      { id: 'c10', riesgo: 'a', aviso: 'sin suspender, el SSD puede pedir la clave de 48 cifras', titulo: 'BitLocker: suspéndelo antes de clonar', solo: { clona: 'si' },
-        hacer: ['Mira si el disco está cifrado: botón derecho en Inicio › «Terminal (Administrador)» › «Sí», y {c:manage-bde -status C:}. Mira «Estado de conversión»: con «Descifrado completo» no está cifrado: sigue al paso siguiente.',
-          'Si dice «Cifrado completo» (o «Cifrado solo de espacio usado») y «Protección activada»: Panel de control › «Cifrado de unidad BitLocker» › «Suspender protección» (en Windows Home, «Cifrado del dispositivo»: usa la orden). O la orden: {c:manage-bde -protectors -disable C: -RebootCount 0}',
-          { solo: { cabe: ['menor', 'no'] }, t: '**Cifrado y con un SSD más pequeño:** suspender no basta (un volumen cifrado se copia entero, no solo lo ocupado). Descífralo antes: {c:manage-bde -off C:} y espera (horas) a que manage-bde -status diga «Descifrado completo». Al acabar, en el SSD, vuelve a activarlo («Activar BitLocker»).' },
-          'Ten a mano la **clave de recuperación** (48 cifras): el dueño la tiene en **aka.ms/myrecoverykey**, con su cuenta Microsoft.'],
-        porque: ['Suspender no descifra: deja la llave a mano hasta que se reanude. Con -RebootCount 0 queda suspendido hasta que lo reanudes tú, después de arrancar del SSD.', 'Sin suspender, al arrancar desde un disco nuevo BitLocker puede pedir la clave de recuperación.'] },
+      { id: 'c10', riesgo: 'a', aviso: 'con el disco cifrado y sin este paso, el clon falla o el SSD pide la clave de 48 cifras', titulo: 'BitLocker, antes de clonar', solo: { clona: 'si' },
+        hacer: ['Mira si el disco está cifrado: botón derecho en Inicio › «Terminal (Administrador)» › «Sí», y escribe la orden de abajo. En lo que responde, mira «Estado de conversión»: con «Descifrado completo» no está cifrado y sigues al paso siguiente: {c:manage-bde -status C:}',
+          { solo: { herr: 'rz' }, t: 'Si dice «Cifrado completo» (o «Cifrado solo de espacio usado») y «Protección activada», **suspéndelo**: Panel de control › «Cifrado de unidad BitLocker» › «Suspender protección» (en Windows Home, «Cifrado del dispositivo»: usa la orden). O la orden: {c:manage-bde -protectors -disable C: -RebootCount 0}' },
+          { solo: { herr: 'marca' }, t: 'Si dice «Cifrado completo» (o «Cifrado solo de espacio usado»), **descífralo antes**: con el programa de la marca, suspender no basta (el de Samsung no clona discos cifrados, lo dice su guía; otros dejan el SSD sin cifrar). En Windows Home, desactiva Configuración › «Privacidad y seguridad» › «Cifrado del dispositivo»; o la orden: {c:manage-bde -off C:}' },
+          { solo: { herr: 'marca' }, t: 'Descifrar tarda (horas en un disco grande; el equipo se puede seguir usando). Espera a que manage-bde -status C: diga «Descifrado completo». Al final, ya en el SSD, se vuelve a activar (el paso de BitLocker de después).' },
+          'Ten a mano la **clave de recuperación** (48 cifras): el dueño la tiene en **aka.ms/myrecoverykey**, con su cuenta Microsoft. Si no usa cuenta Microsoft, la enseña esta orden (apúntala en papel): {c:manage-bde -protectors -get C:}'],
+        porque: [{ solo: { herr: 'rz' }, t: 'Suspender no descifra: deja la llave a mano hasta que se reanude. Con -RebootCount 0 queda suspendido hasta que lo reanudes tú, después de arrancar del SSD.' }, { solo: { herr: 'rz' }, t: 'Sin suspender, al arrancar desde un disco nuevo BitLocker puede pedir la clave de recuperación.' },
+          { solo: { herr: 'marca' }, t: 'Los programas de las marcas copian desde Windows: unos no admiten un disco cifrado y otros lo dejan sin cifrar en el SSD. Descifrar antes y volver a activar al final es más lento, pero vale para todos.' },
+          { solo: { herr: 'marca', cabe: 'mayor' }, t: 'Si no se puede esperar a descifrar, vuelve a «Tu caso» y contesta que la marca no da programa: Rescuezilla clona con BitLocker solo suspendido.' }] },
       { id: 'c11', riesgo: 'r', aviso: 'el destino se borra entero', titulo: 'Clona con el programa de la marca del SSD', solo: { herr: 'marca' },
         freno: ['Tengo la copia de lo importante, abierta en otro equipo', 'Tengo apuntados el modelo y el tamaño del disco de ahora (origen) y del SSD (destino)'],
         hacer: ['Bájalo de la **web de la marca del SSD** (nunca de otra): Samsung, su **Data Migration**, dentro de Samsung Magician; Kingston, **Acronis True Image for Kingston**, desde Kingston SSD Manager; WD y Crucial, su **Acronis True Image**. Solo funcionan con un SSD de su marca conectado. Instálalo y ábrelo con el SSD ya conectado.',
           'En el programa, la opción de **clonar** o de **migrar**: el **origen** es el disco de ahora (el de C:) y el **destino**, el SSD, por el modelo y el tamaño que apuntaste.',
           { solo: { cabe: ['menor', 'no'] }, t: 'Con un SSD más pequeño, el programa encoge las particiones solo: mira en su resumen que salen todas y que caben.' },
-          { solo: { hueco: 'uno' }, t: 'El de **WD no clona a un disco por USB** (lo dice su soporte): con un SSD WD por USB, vuelve a «Tu caso» y contesta que la marca no da programa.' },
+          { solo: { hueco: 'uno' }, t: 'Por USB no todos valen: el de **WD no clona a un disco por USB** y el de **Kingston** pide su SSD dentro del equipo (lo dicen sus webs); el de Samsung avisa de que con algunos adaptadores falla. Si el tuyo no ve el SSD, vuelve a «Tu caso» y contesta que la marca no da programa.' },
           'Enchufa el cargador, confirma el aviso de que el destino se borra y **espera** sin usar el equipo (puede pedir reiniciar: déjalo). Al acabar, **apaga** (con {k:Mayús} pulsada al apagar).'],
         porque: 'El programa de la marca va desde Windows, sin pendrive, y sabe meter el disco en un SSD más pequeño si lo ocupado cabe.',
-        fallos: [{ s: 'Dice que no hay un SSD de su marca', r: 'Ese programa solo vale para sus SSD. Vuelve a «Tu caso» y contesta que la marca no da programa: la guía te lleva a Rescuezilla (SSD igual o mayor) o a instalar de cero (más pequeño).' },
+        fallos: [{ s: 'Dice que no hay un SSD de su marca, o pide activar el producto', r: 'O el SSD no es de esa marca, o el programa no lo ve por USB (WD y Kingston lo quieren dentro del equipo). Vuelve a «Tu caso» y contesta que la marca no da programa: la guía te lleva a Rescuezilla (SSD igual o mayor) o a instalar de cero (más pequeño).' },
           { s: 'Se para con errores de lectura', r: 'El disco de ahora tiene sectores que no se leen: es el paso de la salud. La copia primero ({u:U05}) y, si no se termina, instala de cero en el SSD.' }] },
       { id: 'c12', riesgo: 'a', aviso: 'el pendrive se borra entero', titulo: 'Prepara el pendrive de Rescuezilla', solo: { herr: 'rz' },
         hacer: ['Baja la ISO de **rescuezilla.com** (la de 64 bits, la última: la 2.6.2 en noviembre de 2026). Es gratis y de código abierto.',
@@ -2875,8 +2914,8 @@ F1.registrar({
         porque: 'Rescuezilla es un sistema pequeño que arranca desde el pendrive y no escribe nada en los discos hasta que se lo pides. Por dentro es Clonezilla, el de siempre, con ventanas y ratón.' },
       { id: 'c13', riesgo: 'r', aviso: 'el destino se borra entero', titulo: 'Clona con Rescuezilla', solo: { herr: 'rz' },
         freno: ['Tengo la copia de lo importante, abierta en otro equipo', 'Tengo apuntados el modelo y el tamaño del disco de ahora (origen) y del SSD (destino)'],
-        hacer: ['Enchufa el cargador y **vuelve a enchufar la caja del SSD**. Con el SSD conectado y el pendrive puesto, apaga del todo (con {k:Mayús} pulsada al apagar) y arranca desde el pendrive con la tecla del menú de arranque ({u:U02}). Elige la primera opción del menú de Rescuezilla y espera a su escritorio.',
-          'Elige **clonar** (Clone). Primero, el **origen**: el disco de ahora, por su modelo y su tamaño. Después, el **destino**: el SSD. Rescuezilla enseña el modelo y el tamaño de cada uno: compáralos con tu papel (si miden lo mismo, el destino es el que no tiene particiones).',
+        hacer: ['Enchufa el cargador (un portátil) y, si el SSD va por USB, **vuelve a enchufar su caja**. Con el SSD conectado y el pendrive puesto, apaga del todo (con {k:Mayús} pulsada al apagar) y arranca desde el pendrive con la tecla del menú de arranque ({u:U02}). En el primer menú de Rescuezilla, baja con las flechas a **Español** y pulsa {k:Intro} (si no tocas nada en 10 segundos, arranca en inglés); dentro, la primera opción (Iniciar Rescuezilla). Espera a su escritorio.',
+          'Elige **Clonar** (en inglés, Clone). Primero, el **origen**: el disco de ahora, por su modelo y su tamaño. Después, el **destino**: el SSD. Rescuezilla enseña el modelo y el tamaño de cada uno: compáralos con tu papel (si miden lo mismo, el destino es el que no tiene particiones).',
           'Deja marcadas todas las particiones del origen y confirma: avisa de que el destino se borra.',
           'Espera sin tocar nada (de media hora a varias horas, según lo ocupado). Al acabar, apaga desde Rescuezilla y **quita el pendrive**.'],
         porque: 'El clon copia la tabla de particiones y cada partición. Windows, en el SSD, arranca igual que en el disco de ahora.',
@@ -2888,7 +2927,7 @@ F1.registrar({
     { titulo: 'Cambiar el disco', pasos: [
       { id: 'c14', riesgo: 'r', aviso: 'hay que abrir el equipo', titulo: 'Deja solo el SSD para arrancar', solo: { clona: 'si' },
         freno: ['El equipo está apagado del todo, desenchufado (un portátil, también sin su batería si se quita) y me he descargado tocando metal', 'Sé cuál es el disco de ahora y cuál el SSD (el modelo, en la pegatina)'],
-        hacer: [{ solo: { hueco: 'uno' }, t: 'Saca el disco de ahora y pon el SSD **en su sitio**, con los mismos tornillos (en uno de 2,5, a veces va en un marco: pásalo al nuevo). Un M.2: a 30 grados, bájalo y su tornillo.' },
+        hacer: [{ solo: { hueco: 'uno' }, t: 'Saca el SSD de su caja USB. Saca el disco de ahora y pon el SSD **en su sitio**, con los mismos tornillos (en uno de 2,5, a veces va en un marco: pásalo al nuevo). Un M.2: a 30 grados, bájalo y su tornillo.' },
           { solo: { hueco: 'dos' }, t: '**Desconecta el disco de ahora** (sus cables, o sácalo) para el primer arranque: solo el SSD dentro.' },
           'Guarda el disco de ahora tal cual, con una etiqueta: es la copia mientras compruebas el SSD.'],
         porque: 'Con los dos discos conectados (dentro o por USB), Windows ve dos gemelos: deja uno «sin conexión» («El disco está sin conexión porque tiene una colisión de firmas con otro disco que está conectado») o arranca del de ahora sin avisar, y crees que el SSD no va.' }
@@ -2903,12 +2942,12 @@ F1.registrar({
           { s: 'Sale en la BIOS pero no arranca (vuelve a la BIOS o dice que no hay disco de arranque)', r: 'Pon el SSD el primero del orden de arranque ({u:U02}), en el mismo modo que el disco de antes: con «Estilo de partición» GPT, **UEFI**; con MBR, Legacy o CSM. Si aún no arranca, el clon quedó a medias: vuelve a poner el disco de antes (y el SSD en su caja o en el otro hueco) y repite el clon.' },
           { s: 'Pide la clave de recuperación de BitLocker', r: 'Escríbela (48 cifras, de aka.ms/myrecoverykey, la del mismo Id. que enseña la pantalla). Arranca y sigue: el paso de BitLocker lo deja bien.' },
           { s: 'Arranca, pero va igual de lento', r: 'Mira «Multimedia» en sus «Propiedades»: si dice HDD, ha arrancado del disco de antes (tiene que estar fuera). Si dice SSD y va lento, sigue en {u:U09}.' }] },
-      { id: 'c16', riesgo: 'a', aviso: 'hasta reanudarlo, el disco no está protegido', titulo: 'BitLocker: reanúdalo', solo: { clona: 'si' },
-        hacer: ['Si lo suspendiste: Panel de control › «Cifrado de unidad BitLocker» › «Reanudar protección», o la orden {c:manage-bde -protectors -enable C:}',
-          'Comprueba con {c:manage-bde -status C:} que dice «Protección activada».',
-          '**Si lo descifraste antes de clonar** (SSD más pequeño): actívalo ahora en el SSD, Panel de control › «Cifrado de unidad BitLocker» › «Activar BitLocker», y que la clave nueva quede en la cuenta Microsoft del dueño.',
+      { id: 'c16', riesgo: 'a', aviso: 'hasta entonces, el disco no está protegido', titulo: 'BitLocker: déjalo como estaba', solo: { clona: 'si' },
+        hacer: [{ solo: { herr: 'rz' }, t: 'Si lo suspendiste: Panel de control › «Cifrado de unidad BitLocker» › «Reanudar protección», o la orden {c:manage-bde -protectors -enable C:}' },
+          { solo: { herr: 'marca' }, t: '**Si lo descifraste antes de clonar**, actívalo ahora en el SSD: Panel de control › «Cifrado de unidad BitLocker» › «Activar BitLocker» (en Windows Home, Configuración › «Privacidad y seguridad» › «Cifrado del dispositivo»), y que la clave nueva quede en la cuenta Microsoft del dueño. Con cuenta local en Windows Home puede no dejar activarlo: díselo al dueño (queda sin cifrar hasta que entre con una cuenta Microsoft).' },
+          'Compruébalo: tiene que decir «Protección activada». {c:manage-bde -status C:}',
           'Si no estaba cifrado, no hay nada que hacer aquí.'],
-        porque: 'Suspendido, la llave del cifrado está a mano en el disco: cualquiera que lo saque puede leerlo.' },
+        porque: 'Suspendido o descifrado, cualquiera que saque el disco puede leerlo.' },
       { id: 'c17', riesgo: 'a', aviso: 'no borres la partición de recuperación', titulo: 'Aprovecha el sitio que sobra', solo: { clona: 'si', cabe: 'mayor' },
         hacer: ['En la Administración de discos, si el SSD es mayor que el disco de ahora, al final queda espacio **«No asignado»**.',
           'Si está justo detrás de C:, botón derecho en C: › «Extender volumen...» y «Siguiente» hasta «Finalizar».',
@@ -2927,7 +2966,7 @@ F1.registrar({
           'Después, si va a seguir en el equipo o en una caja USB como disco de copias, formatéalo: {u:U11}.',
           'Si se lo lleva otra persona o se tira, bórralo de verdad (no basta con formatear): también en {u:U11}. Antes de borrarlo, búscalo por su **modelo** (no por el tamaño ni el número: el SSD puede medir lo mismo y salir como Disco 0 o 1).',
           'Si estaba cifrado (y lo suspendiste o lo descifraste), ya no está protegido: cualquiera que lo conecte lo lee. Guárdalo en un sitio seguro hasta borrarlo.',
-          'Si lo vuelves a conectar sin formatear (dentro o por USB), Windows lo deja «sin conexión»: es el gemelo del SSD. Para sacar un archivo, conéctalo a **otro equipo**. Para formatearlo aquí, cuando estés seguro de que el SSD tiene todo: en la Administración de discos, botón derecho en su nombre («Disco 1») › «En línea», y luego {u:U11}.'],
+          'Si lo vuelves a conectar sin formatear (dentro o por USB), Windows lo deja «sin conexión»: es el gemelo del SSD. Para sacar un archivo, conéctalo a **otro equipo**. Para formatearlo aquí, cuando estés seguro de que el SSD tiene todo: en la Administración de discos, botón derecho en su nombre (a la izquierda: «Disco» y un número; es el que dice «Sin conexión») › «En línea», y luego {u:U11}.'],
         porque: 'El disco de antes es la mejor copia mientras el dueño estrena el SSD: hasta que diga que no le falta nada, no se borra.' }
     ] }
   ],
@@ -2940,16 +2979,16 @@ F1.registrar({
   finListo: 'El equipo arranca desde el SSD con todo lo suyo. El disco de antes, una semana guardado.',
   despues: ['{u:U06}', '{u:U11}', 'Si el equipo sigue lento con el SSD: {u:U09}.'],
   chuleta: [
-    { r: 'a', t: '**Antes:** ¿clonar o instalar de cero? · la copia ({u:U05}) · la salud del disco («Discos y volúmenes» › «Propiedades» › «Estado de la unidad»).' },
+    { r: 'a', t: '**Antes:** ¿clonar o instalar de cero? · la copia ({u:U05}) · la salud del disco («Discos y volúmenes»; en un disco mecánico, lo que notes: clics, cuelgues).' },
     '**El SSD:** 2,5 SATA o M.2 (NVMe o SATA, 2280), el que admite el equipo (un M.2 no va en el sitio de un 2,5); igual o mayor, o menor con el programa de su marca y lo ocupado con sitio de sobra.',
     { r: 'r', t: '**Apunta** el modelo y el tamaño del origen (el de ahora) y del destino (el SSD): el destino se borra entero.' },
     { tuyo: { hueco: 'uno' }, t: '**Un solo hueco:** el SSD por USB, en una caja de su tipo, y el cambio después de clonar.' },
     { tuyo: { hueco: 'dos' }, t: '**Dos huecos:** el SSD dentro, con el equipo apagado y desenchufado.' },
-    { r: 'a', t: '**BitLocker:** manage-bde -status C: · si está cifrado, «Suspender protección» o manage-bde -protectors -disable C: -RebootCount 0 · con un SSD más pequeño, descifrar antes (manage-bde -off C:).' },
-    { tuyo: { herr: 'marca' }, t: '**Programa de la marca del SSD** (de su web; el de WD, no por USB): clonar, origen el de C:, destino el SSD.' },
-    { tuyo: { herr: 'rz' }, t: '**Rescuezilla** (rescuezilla.com) en un pendrive con Rufus · arrancar con la tecla del menú ({u:U02}) · Clone · origen, destino, confirmar.' },
+    { r: 'a', t: '**BitLocker:** manage-bde -status C: · si está cifrado: con Rescuezilla, «Suspender protección» (manage-bde -protectors -disable C: -RebootCount 0); con el programa de la marca, descifrar antes (manage-bde -off C:).' },
+    { tuyo: { herr: 'marca' }, t: '**Programa de la marca del SSD** (de su web; por USB, ni el de WD ni el de Kingston): clonar, origen el de C:, destino el SSD.' },
+    { tuyo: { herr: 'rz' }, t: '**Rescuezilla** (rescuezilla.com) en un pendrive con Rufus · arrancar con la tecla del menú ({u:U02}) · Español › Clonar · origen, destino, confirmar.' },
     { r: 'r', t: '**Primer arranque solo con el SSD** (si no, «colisión de firmas»); en «Propiedades», «Multimedia: SSD».' },
-    { r: 'a', t: '**Después:** «Reanudar protección» (manage-bde -protectors -enable C:) · lo que sobra: «Extender volumen...» o, si sale apagado, «Nuevo volumen simple...» (D:) · la activación.' },
+    { r: 'a', t: '**Después:** «Reanudar protección» (manage-bde -protectors -enable C:) o, si lo descifraste, «Activar BitLocker» · lo que sobra: «Extender volumen...» o, si sale apagado, «Nuevo volumen simple...» (D:) · la activación.' },
     '**El de antes:** una semana guardado; luego, formatearlo o borrarlo de verdad ({u:U11}).',
     { tuyo: { clona: 'no' }, t: '**SSD más pequeño sin programa de su marca:** instalar de cero ({u:U01}) y devolver los datos ({u:U06}).' }
   ],
@@ -2959,7 +2998,7 @@ F1.registrar({
   id: 'U11', tipo: 'guia', icono: 'pendrive',
   titulo: 'Formatear un pendrive o un disco', corto: 'El sistema de archivos que toca, sin borrar el que no era', tiempo: '5-15 min',
   revisado: 'nov. 2026', version: 'Windows 11 26H2',
-  claves: ['formatear', 'formato', 'pendrive', 'usb', 'disco externo', 'exfat', 'fat32', 'ntfs', 'particiones', 'diskpart', 'clean', 'protegido contra escritura', 'no pudo completar el formato', 'borrar', 'vender', 'tarjeta sd'],
+  claves: ['formatear', 'formato', 'pendrive', 'pen', 'usb', 'disco externo', 'disco duro', 'borrar disco', 'borrado seguro', 'exfat', 'fat32', 'ntfs', 'particiones', 'diskpart', 'clean', 'protegido contra escritura', 'no pudo completar el formato', 'borrar', 'vender', 'tarjeta sd'],
   resumen: 'Dejar un pendrive o un disco vacío y con el **sistema de archivos que toca** para lo que se va a usar, **sin borrar el que no era**. Y cuando se da o se vende, **borrarlo de verdad**.',
   necesitas: [
     'El pendrive o el disco, y saber que **lo que tiene está copiado** o no se quiere',
@@ -2983,20 +3022,20 @@ F1.registrar({
   avisos: [
     { color: 'ambar', t: '**Formatear borra todo lo de esa unidad.** Lo más peligroso es equivocarse de unidad: el primer paso es saber cuál es.' },
     { solo: { como: 'raro' }, color: 'azul', t: '**Las órdenes** llevan un botón **Copiar**. Si lees en el móvil, copia en el móvil: en el PC, escríbela tal cual (o abre F1 en el PC).' },
-    { solo: { para: ['fat', 'vender'], como: 'normal' }, color: 'azul', t: '**Las órdenes** llevan un botón **Copiar**. Si lees en el móvil, copia en el móvil: en el PC, escríbela tal cual (o abre F1 en el PC).' }
+    { solo: { para: 'vender', como: 'normal' }, color: 'azul', t: '**Las órdenes** llevan un botón **Copiar**. Si lees en el móvil, copia en el móvil: en el PC, escríbela tal cual (o abre F1 en el PC).' }
   ],
   fases: [
     { titulo: 'Antes', pasos: [
       { id: 'f01', riesgo: 'a', aviso: 'quita lo que no sea', titulo: 'Saber cuál es: la letra, el tamaño y el nombre',
         hacer: ['Quita los **demás** pendrives y discos USB, también el de la copia.',
-          'Enchufa el tuyo y mira en el Explorador, en «Este equipo», su **letra**, su **tamaño** y su **nombre** (por ejemplo, «PENDRIVE (E:)», de 29,8 GB). Apúntalos.',
+          'Enchufa el tuyo y mira en el Explorador, en «Este equipo», su **letra**, su **tamaño** y su **nombre** (por ejemplo, «PENDRIVE (G:)», de 29,8 GB). Apúntalos.',
           'Windows enseña menos que la caja: uno de 16 GB sale con unos 14,9; de 32, con 29,8; de 64, con 59,6; un disco de 2 TB, con 1,81 TB. Es normal.',
           'Si tiene algo que conservar, cópialo antes al PC o a otro disco y ábrelo allí ({u:U05}).',
           { solo: { como: 'raro' }, t: 'Si sale raro, la letra de «Este equipo» enseña solo una parte: apunta también el tamaño de la caja o la pegatina y la marca. En la Administración de discos verás en qué «Disco» está esa letra: ese es el tuyo.' }],
         porque: 'El disco de Windows (C:) no deja formatearse, pero un disco de datos o el de la copia, sí, sin preguntar de quién es.' },
       { id: 'f02', riesgo: 'v', titulo: 'El sistema de archivos que toca',
         hacer: [{ solo: { para: 'todo' }, t: '**exFAT**: lo leen Windows, Mac, Linux, los móviles y casi todas las teles de ahora, y admite archivos grandes (una película de 10 GB). Una tele o un coche de hace años puede no leerlo: entonces, FAT32.' },
-          { solo: { para: 'fat' }, t: '**FAT32**: lo lee todo, también lo antiguo, pero **ningún archivo puede pasar de 4 GB**. El Explorador solo lo ofrece en unidades de **32 GB o menos**: para una mayor, se hace una parte de 32 GB (los pasos siguientes lo explican).' },
+          { solo: { para: 'fat' }, t: '**FAT32**: lo lee todo, también lo antiguo, pero **ningún archivo puede pasar de 4 GB**. El Explorador solo lo ofrece en unidades de **32 GB o menos**: para una mayor, la orden format o una parte de unos 32 GB (los pasos siguientes lo explican).' },
           { solo: { para: 'fat' }, t: 'Para **actualizar la BIOS**: mejor un pendrive de 32 GB o menos, con el archivo suelto, fuera de carpetas. Si la BIOS no lo ve, prepáralo con diskpart (queda en MBR, el que leen casi todas).' },
           { solo: { para: 'ntfs' }, t: '**NTFS**: el de Windows (permisos, archivos grandes, cifrado). Un Mac lo lee pero no escribe, y muchas teles y coches no lo leen.' },
           { solo: { para: 'vender' }, t: 'Para darlo, el sistema de archivos da igual: lo importante es **borrar de verdad** lo de antes. Al final, **exFAT**, que vale para cualquiera.' },
@@ -3019,9 +3058,9 @@ F1.registrar({
           { s: '«Windows no puede formatear esta unidad. Cierre las utilidades de disco y otros programas que estén usando esta unidad…»', r: 'Cierra las ventanas del Explorador de esa unidad y los programas con archivos suyos abiertos (o el antivirus que la esté examinando) y repite.' }] },
       { id: 'f04', riesgo: 'r', aviso: 'borra todo lo de esa unidad', titulo: 'FAT32 en una unidad de más de 32 GB', solo: { para: 'fat', como: 'normal' },
         freno: ['La letra, el tamaño y el nombre son los que apunté', 'Lo que tiene está copiado o no lo quiero'],
-        hacer: ['Abre el Terminal como administrador (botón derecho en Inicio › «Terminal (Administrador)»). Cambia **E:** por tu letra: {c:format E: /FS:FAT32 /Q /V:PENDRIVE}',
-          'Si pide «Inserte un disco nuevo en la unidad E:», pulsa {k:Intro}. Al acabar, «Formato completado.».',
-          'Si dice que el volumen es **demasiado grande para FAT32**, tu Windows aún no lo admite por orden: crea en la Administración de discos una partición de **32 GB** (32768 MB en «Nuevo volumen simple...»), que sí sale en FAT32. El resto del pendrive se queda sin usar.'],
+        hacer: ['Abre el Terminal de administrador (botón derecho en Inicio › «Terminal (Administrador)»). Escribe **format LETRA: /FS:FAT32 /Q /V:PENDRIVE**, con la letra de tu unidad en lugar de LETRA (si es la G:, format G: /FS:FAT32 /Q /V:PENDRIVE). Esta orden no lleva botón de copiar a propósito: la letra es la tuya, y con otra borras otra unidad.',
+          'Si pide «Inserte un disco nuevo en la unidad G:» (con tu letra), mira otra vez que es la tuya y pulsa {k:Intro}. Al acabar, «Formato completado.».',
+          'Si dice que el volumen es **demasiado grande para FAT32**, tu Windows aún no lo admite por orden: hazle una parte de unos 32 GB en la Administración de discos: botón derecho en la unidad del pendrive › «Eliminar volumen...» (borra lo que tiene) y, en lo «No asignado», «Nuevo volumen simple...» de **32000** MB; en «Formatear la partición», «Sistema de archivos»: **FAT32** (ahora sí sale). El resto del pendrive se queda sin usar.'],
         porque: ['El diálogo del Explorador sigue sin ofrecer FAT32 por encima de 32 GB. La orden **format** llega hasta 2 TB desde una actualización de 2026 de Windows 11 (se va activando poco a poco; en los equipos de empresa, apagada).', 'Antes de que existiera, la salida era la partición de 32 GB: sigue valiendo para todo.'],
         ir: { u: 'U07', fila: 'format', t: 'La orden format, en la chuleta de comandos' } },
       { id: 'f05', riesgo: 'r', aviso: 'borra el disco que elijas', titulo: 'Con la Administración de discos', solo: { como: 'raro', para: ['todo', 'fat', 'ntfs'] },
@@ -3030,20 +3069,20 @@ F1.registrar({
           'Si dice «Sin inicializar» (un disco nuevo): botón derecho en el nombre del disco › «Inicializar disco» › «GPT (Tabla de particiones GUID)» (para un aparato o un PC muy antiguos, «MBR (Registro de arranque maestro)») › «Aceptar».',
           'Si tiene varias partes (las del instalador): botón derecho en **cada una de ese disco** › «Eliminar volumen...» › «Sí», hasta que todo quede «No asignado».',
           { solo: { para: ['todo', 'ntfs'] }, t: 'Botón derecho en «No asignado» › «Nuevo volumen simple...» › «Siguiente» (el tamaño, todo) › «Asignar la letra de unidad siguiente:» › en «Formatear la partición», ' + '«Sistema de archivos», el tuyo, una etiqueta y «Dar formato rápido» › «Finalizar».' },
-          { solo: { para: 'fat' }, t: 'Botón derecho en «No asignado» › «Nuevo volumen simple...»: para FAT32, el tamaño como mucho **32768** MB › «Asignar la letra de unidad siguiente:» › en «Formatear la partición», FAT32, una etiqueta y «Dar formato rápido» › «Finalizar».' }],
+          { solo: { para: 'fat' }, t: 'Botón derecho en «No asignado» › «Nuevo volumen simple...»: para FAT32, el tamaño como mucho **32000** MB › «Asignar la letra de unidad siguiente:» › en «Formatear la partición», FAT32, una etiqueta y «Dar formato rápido» › «Finalizar».' }],
         escena: 'dm-pendrive',
         porque: 'El Explorador solo ve las unidades con letra; la Administración de discos ve el disco entero, con sus partes y lo que no está asignado.',
         fallos: [{ s: '«Eliminar volumen...» sale apagado en una parte', r: 'Es una partición protegida (de sistema o de recuperación). Si es del pendrive, no del disco de Windows, sigue con diskpart, el paso siguiente.' },
           { s: 'El disco no sale', r: 'Otro puerto o, si es un disco, otro cable. Si tampoco sale en otro PC, el disco o su caja están rotos.' }] },
       { id: 'f06', riesgo: 'r', aviso: 'clean borra el disco que elijas', titulo: 'Si la Administración de discos no puede: diskpart', solo: { como: 'raro', para: ['todo', 'fat', 'ntfs'] },
         freno: ['Tengo el número de mi disco de la Administración de discos, y en list disk casa su tamaño', 'detail disk me ha enseñado el nombre de mi pendrive o disco, no el de otro'],
-        hacer: ['Terminal como administrador: {c:diskpart}, luego {c:list disk}. Busca **el número que apuntaste** en la Administración de discos y comprueba que casa su tamaño (columna Tamaño).',
+        hacer: ['En el Terminal de administrador (botón derecho en Inicio › «Terminal (Administrador)»): {c:diskpart}, luego {c:list disk}. Busca **el número que apuntaste** en la Administración de discos y comprueba que casa su tamaño (columna Tamaño).',
           'Elígelo escribiendo **select disk** y ese número (por ejemplo, select disk 2): debe decir «El disco 2 es ahora el disco seleccionado.». Luego {c:detail disk}: enseña su nombre y si es USB. **Si no es el tuyo, para aquí.**',
           'Si estaba **protegido contra escritura**: {c:attributes disk clear readonly} («Atributos de disco borrados correctamente.»).',
           'Bórralo: {c:clean} («DiskPart ha limpiado el disco satisfactoriamente.»).',
           { solo: { para: 'todo' }, t: 'Y prepáralo, una orden detrás de otra: {c:create partition primary}, {c:format fs=exfat quick label=PENDRIVE}, {c:assign} y {c:exit}' },
           { solo: { para: 'ntfs' }, t: 'Y prepáralo, una orden detrás de otra (en un disco de más de 2 TB, antes {c:convert gpt}): {c:create partition primary}, {c:format fs=ntfs quick label=DATOS}, {c:assign} y {c:exit}' },
-          { solo: { para: 'fat' }, t: 'Y prepáralo, una orden detrás de otra: {c:create partition primary size=32768} (32 GB: si el tuyo es de 32 o menos, quita size=32768), {c:format fs=fat32 quick label=PENDRIVE}, {c:assign} y {c:exit}' }],
+          { solo: { para: 'fat' }, t: 'Y prepáralo, una orden detrás de otra: {c:create partition primary size=32000} (unos 32 GB: si el tuyo es de 32 o menos, quita size=32000), {c:format fs=fat32 quick label=PENDRIVE}, {c:assign} y {c:exit}' }],
         porque: '**clean** borra la tabla de particiones del disco elegido, también las que la Administración de discos no deja tocar. Con el select disk equivocado, borras el que no era: por eso el número de la Administración de discos, el tamaño y detail disk. El número de select disk no lleva botón de copiar a propósito: es el tuyo, no el del ejemplo.',
         ir: { u: 'U07', fila: 'clean', t: 'clean y list volume, en la chuleta de comandos' } },
       { id: 'f07', riesgo: 'r', aviso: 'esto no tiene vuelta atrás', titulo: 'Bórralo de verdad antes de darlo', solo: { para: 'vender' },
@@ -3053,14 +3092,14 @@ F1.registrar({
           '**Tarda horas** (un disco de 2 TB por USB 3, de cuatro a seis) y no enseña cuánto lleva: enchufado, con el PC sin suspenderse, y sin tocar el cable. Acaba con «DiskPart ha limpiado el disco satisfactoriamente.».',
           '**Un SSD:** el borrado seguro del programa de su marca (Samsung Magician, Kingston SSD Manager…), de la web del fabricante. Un SSD reparte lo escrito por dentro, y escribir ceros desde Windows no llega a todo.',
           '**Si se va con el PC entero**, mejor restablecerlo con «Quitar todo» y la limpieza de la unidad: {u:U04}.',
-          'Al acabar, el disco queda sin nada: {c:create partition primary} (en uno de más de 2 TB, antes {c:convert gpt}), {c:format fs=exfat quick label=USB}, {c:assign} y {c:exit}.'],
+          'Al acabar **clean all**, el disco queda sin nada; sin salir de diskpart: {c:create partition primary} (en uno de más de 2 TB, antes {c:convert gpt}), {c:format fs=exfat quick label=USB}, {c:assign} y {c:exit}. Tras el borrado de la marca en un SSD ya no estás en diskpart: dale formato desde la Administración de discos (botón derecho en «No asignado» › «Nuevo volumen simple...»).'],
         porque: ['Un formato rápido no borra los archivos: solo el índice. Un programa de recuperar los encuentra casi todos.', 'clean all los sobrescribe uno a uno; en un SSD, el de la marca usa la orden de borrado del propio disco.'],
         fallos: [{ s: 'clean all se para con un error (de E/S, de acceso) o se desconecta el disco', r: 'Vuelve a empezar desde diskpart, list disk y select disk: clean all empieza de cero. Si se para siempre en el mismo sitio, el disco tiene zonas que no se escriben: para darlo no vale; se destruye.' }],
         ir: { u: 'U07', fila: 'clean', t: 'clean, en la chuleta de comandos' } }
     ] },
     { titulo: 'Al terminar', pasos: [
       { id: 'f08', riesgo: 'v', titulo: 'Compruébalo y expúlsalo bien',
-        hacer: ['En «Este equipo»: la letra, el **tamaño de verdad** (con FAT32 en uno de más de 32 GB, unos 32 GB: lo demás queda sin usar) y, en botón derecho › Propiedades, el «Sistema de archivos» que elegiste.',
+        hacer: ['En «Este equipo»: la letra, el **tamaño de verdad** (si le hiciste una parte de unos 32 GB para FAT32, eso: lo demás queda sin usar) y, en botón derecho › Propiedades, el «Sistema de archivos» que elegiste.',
           { solo: { para: ['todo', 'fat', 'ntfs'] }, t: 'Copia un archivo y ábrelo desde la unidad: si se abre, está bien. Si es para un aparato (la tele, el coche), pruébalo allí.' },
           { solo: { para: 'vender' }, t: 'Que salga vacía y con su tamaño de verdad. No le copies nada: se entrega vacía.' },
           'Para quitarlo: el icono «Quitar hardware de forma segura y expulsar el medio» de la barra de tareas (o botón derecho en la unidad › «Expulsar») › «Expulsar» con su nombre. Espera a «Es seguro quitar el hardware».'],
@@ -3079,7 +3118,7 @@ F1.registrar({
   chuleta: [
     { r: 'a', t: '**Cuál es:** quita los demás USB · letra, tamaño y nombre en «Este equipo», apuntados.' },
     { tuyo: { para: 'todo' }, t: '**exFAT** para todo; ' + 'FAT32 para lo antiguo (archivos de menos de 4 GB); NTFS solo Windows.' },
-    { tuyo: { para: 'fat' }, t: '**FAT32**: archivos de menos de 4 GB; el Explorador, solo hasta 32 GB; más: format E: /FS:FAT32 /Q o una partición de 32 GB.' },
+    { tuyo: { para: 'fat' }, t: '**FAT32**: archivos de menos de 4 GB; el Explorador, solo hasta 32 GB; más: format, tu letra y /FS:FAT32 /Q, o una partición de 32 GB.' },
     { tuyo: { para: 'ntfs' }, t: '**NTFS** para un disco de Windows (un Mac no escribe en él).' },
     { r: 'r', t: '**Normal:** «Este equipo» › botón derecho › «Formatear...» › «Sistema de archivos» · «Formato rápido» · «Iniciar» · «Aceptar» (mira la letra del título).' },
     { r: 'r', t: '**Raro:** «Administración de discos» › por el tamaño › «Eliminar volumen...» en cada parte › «Nuevo volumen simple...».' },

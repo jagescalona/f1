@@ -1,4 +1,4 @@
-var CACHE = 'f1-8c52f9e434c2';
+var CACHE = 'f1-1dd0f5dc5228';
 var PROPIOS = ["./", "index.html", "manifest.webmanifest", "iconos/icon-192.png", "iconos/icon-512.png", "iconos/icon-maskable-192.png", "iconos/icon-maskable-512.png", "iconos/apple-touch-icon.png"];
 var COMUNES = ['/comun/jag-mini.svg', '/comun/jag-mini-oscuro.svg', '/comun/letras/AtkinsonHyperlegibleNext-400.woff2',
                '/comun/letras/AtkinsonHyperlegibleNext-800.woff2'];
