@@ -1049,6 +1049,73 @@ jag-pie.jagp .jagp-a:hover { color: var(--jagt-tinta); }
 (function () {
   var E = F1.escena, esc = F1.esc;
   function win(titulo, cuerpo, cls) { return '<div class="win ' + (cls || '') + '"><div class="bt"><span>' + esc(titulo) + '</span><span class="x">–▢✕</span></div><div class="cn">' + cuerpo + '</div></div>'; }
+  function disco(cab, partes, marca) {
+    return '<div style="display:flex;gap:.25rem;align-items:stretch;margin:.3rem 0' + (marca ? ';outline:2px solid ' + marca + ';outline-offset:2px;border-radius:.2rem' : '') + '">' +
+      '<div style="flex:none;width:5.4rem;background:#EEF1F5;border:1px solid #C9C9C9;padding:.25rem .35rem;font-size:.78em;line-height:1.25">' + cab + '</div>' +
+      '<div style="flex:1;display:flex;gap:2px;min-width:0">' + partes.map(function (p) {
+        var c = p[2] === 'libre' ? 'background:repeating-linear-gradient(45deg,#fff,#fff 4px,#E4E4E4 4px,#E4E4E4 8px);border-top:4px solid #333'
+          : 'background:#fff;border-top:4px solid ' + (p[2] === 'sis' ? '#6C7A89' : '#1A5FB4');
+        return '<div style="flex:' + p[0] + ' 1 0;min-width:3.2rem;border:1px solid #C9C9C9;' + c + ';padding:.2rem .3rem;font-size:.74em;line-height:1.25;overflow:hidden">' + p[1] + '</div>';
+      }).join('') + '</div></div>';
+  }
+  E('dos-discos', {
+    alt: 'La Administración de discos con dos discos: el Disco 0, de 465 GB, con sus particiones y C:, es el de ahora (origen); el Disco 1, de 931 GB, todo «No asignado», es el SSD nuevo (destino).',
+    pie: 'Cada disco por su tamaño: el de ahora tiene C:; el SSD nuevo, todo «No asignado»',
+    html: function () {
+      return win('Administración de discos',
+        disco('<b>Disco 0</b><br>Básico<br>465,76 GB<br>En línea', [[1, 'EFI<br>100 MB', 'sis'], [8, '<b>Windows (C:)</b><br>465,0 GB NTFS', 'dat'], [1, 'Recup.<br>660 MB', 'sis']], '#1A5FB4') +
+        '<div class="lbl" style="margin:.1rem 0 .4rem">Origen: el de ahora (aquí, un disco mecánico de 500 GB).</div>' +
+        disco('<b>Disco 1</b><br>Básico<br>931,51 GB<br>En línea', [[1, '931,51 GB<br>No asignado', 'libre']], '#C64600') +
+        '<div class="lbl" style="margin:.1rem 0 .2rem">Destino: el SSD de 1 TB, vacío. No crees nada en él: lo prepara el clon.</div>' +
+        '<div class="lbl">Los números (Disco 0, Disco 1) pueden cambiar de un arranque a otro: fíate del tamaño y del modelo.</div>');
+    }
+  });
+  E('dm-sobra', {
+    alt: 'La Administración de discos tras clonar a un SSD de 1 TB: C: de 465 GB, después la «Partición de recuperación» y, al final, 465 GB «No asignado». El menú de C: tiene «Extender volumen...» en gris; el de «No asignado» ofrece «Nuevo volumen simple...».',
+    pie: 'La recuperación está en medio: «Extender volumen...» sale en gris. Con lo que sobra, una D:',
+    html: function () {
+      return win('Administración de discos',
+        disco('<b>Disco 0</b><br>Básico<br>931,51 GB<br>En línea', [[1, 'EFI<br>100 MB', 'sis'], [8, '<b>Windows (C:)</b><br>465,0 GB NTFS', 'dat'], [1, 'Recup.<br>660 MB', 'sis'], [8, '465,76 GB<br><b>No asignado</b>', 'libre']]) +
+        '<div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:.4rem">' +
+        '<div style="border:1px solid #C9C9C9;background:#fff;border-radius:.3rem;padding:.25rem;min-width:12rem"><div class="lbl" style="padding:.1rem .4rem">En C:</div>' +
+        '<div style="padding:.15rem .4rem">Formatear...</div><div style="padding:.15rem .4rem;color:#8A8A8A">Extender volumen...</div><div style="padding:.15rem .4rem">Reducir volumen...</div></div>' +
+        '<div style="border:1px solid #C9C9C9;background:#fff;border-radius:.3rem;padding:.25rem;min-width:12rem"><div class="lbl" style="padding:.1rem .4rem">En «No asignado»</div>' +
+        '<div class="anillo" style="padding:.15rem .4rem"><b>Nuevo volumen simple...</b></div></div></div>' +
+        '<div class="lbl">Si el «No asignado» estuviera justo detrás de C:, «Extender volumen...» saldría activo y se usaría ese.</div>');
+    }
+  });
+  E('formatear', {
+    alt: 'El cuadro «Formatear PENDRIVE (E:)»: Capacidad, «Sistema de archivos» desplegado con exFAT, «Tamaño de unidad de asignación» predeterminado, «Etiqueta del volumen» PENDRIVE, «Formato rápido» marcado y los botones «Iniciar» y «Cerrar».',
+    pie: 'Mira la letra del título: es la unidad que se va a borrar',
+    html: function (c) {
+      var fs = (c && c.fs) || 'exFAT';
+      return win('Formatear PENDRIVE (E:)',
+        '<div class="lbl">Capacidad:</div><div class="row" style="border:1px solid #C9C9C9;padding:.15rem .4rem;background:#fff">29,8 GB</div>' +
+        '<div class="lbl">Sistema de archivos</div><div class="row anillo" style="border:1px solid #C9C9C9;padding:.15rem .4rem;background:#fff;justify-content:space-between"><b>' + esc(fs) + '</b><span>⌄</span></div>' +
+        '<div class="lbl">Tamaño de unidad de asignación</div><div class="row" style="border:1px solid #C9C9C9;padding:.15rem .4rem;background:#fff">Tamaño de asignación predeterminado</div>' +
+        '<div class="lbl">Etiqueta del volumen</div><div class="row" style="border:1px solid #C9C9C9;padding:.15rem .4rem;background:#fff">PENDRIVE</div>' +
+        '<div class="sep">Opciones de formato</div>' +
+        '<div class="row anillo" style="padding:.2rem"><span class="chk on"></span><span><b>Formato rápido</b></span></div>' +
+        '<div class="btns"><span class="btn p">Iniciar</span><span class="btn">Cerrar</span></div>');
+    }
+  });
+  E('dm-pendrive', {
+    alt: 'La Administración de discos: el Disco 0 con C: (no se toca) y el Disco 1, de 29,8 GB extraíble, con dos partes del instalador; en cada una, botón derecho y «Eliminar volumen...».',
+    pie: 'Solo las partes del disco que es tuyo, por el tamaño: el Disco 0 no se toca',
+    html: function () {
+      return win('Administración de discos',
+        disco('<b>Disco 0</b><br>Básico<br>476,92 GB<br>En línea', [[1, 'EFI', 'sis'], [8, '<b>Windows (C:)</b><br>475,9 GB NTFS', 'dat'], [1, 'Recup.', 'sis']]) +
+        '<div class="lbl" style="margin:.1rem 0 .4rem">El de Windows: no se toca.</div>' +
+        disco('<b>Disco 1</b><br>Extraíble<br>29,80 GB<br>En línea', [[8, '<b>CCCOMA_X64FRE_ES-ES_DV9 (E:)</b><br>29,77 GB NTFS', 'dat'], [2, 'RUFUS_BOOT<br>1 MB FAT', 'dat']], '#C64600') +
+        '<div style="border:1px solid #C9C9C9;background:#fff;border-radius:.3rem;padding:.25rem;max-width:15rem;margin:.4rem 0 0 auto">' +
+        '<div style="padding:.15rem .4rem">Formatear...</div><div class="anillo" style="padding:.15rem .4rem"><b>Eliminar volumen...</b></div></div>' +
+        '<div class="lbl">Cuando todo el Disco 1 sea «No asignado»: botón derecho › «Nuevo volumen simple...».</div>');
+    }
+  });
+})();
+(function () {
+  var E = F1.escena, esc = F1.esc;
+  function win(titulo, cuerpo, cls) { return '<div class="win ' + (cls || '') + '"><div class="bt"><span>' + esc(titulo) + '</span><span class="x">–▢✕</span></div><div class="cn">' + cuerpo + '</div></div>'; }
   function q(m, s) { return m.querySelector(s); }
   function qq(m, s) { return Array.prototype.slice.call(m.querySelectorAll(s)); }
   E('mct-usb', {
@@ -1469,7 +1536,7 @@ F1.registrar({
     'Los datos del dueño están en su sitio y se abren; un disco de datos, con su letra de antes.', 'Si un disco está cifrado, su clave está guardada.', 'El dueño entra con su cuenta y sabe su contraseña o su PIN.'],
   finTitulo: 'Comprueba la entrega', finTexto: 'Antes de dar el equipo por terminado, comprueba cada punto, con el dueño delante si puede ser.',
   finListo: 'Todo comprobado: Windows 11 limpio, al día, activado y con sus datos. Trabajo terminado.',
-  despues: ['{u:U06}', 'El pendrive de Media Creation Tool vale para otros PC. El de Rufus lleva las casillas que marcaste (y, si hay cuenta local, su nombre): para otro PC, mira si sirven o rehazlo.'],
+  despues: ['{u:U06}', 'El pendrive de Media Creation Tool vale para otros PC. El de Rufus lleva las casillas que marcaste (y, si hay cuenta local, su nombre): para otro PC, mira si sirven o rehazlo.', 'Para volver a usar el pendrive como uno normal (sale más pequeño y en dos unidades): {u:U11}.'],
   chuleta: [
     { r: 'a', t: '**Antes:** copia de los datos, **abierta en otro equipo**. Apunta la edición (Home o Pro), el tamaño del disco, la marca y el modelo.' },
     { r: 'r', t: '**Pendrive:** de 8 GB (Media Creation Tool) o 16 GB (Rufus), **solo él** enchufado: se borra entero.' },
@@ -1907,7 +1974,7 @@ F1.registrar({
       freno: ['Tengo la copia de los datos (también los que guardan los programas) y la he abierto en otro equipo', 'El dueño sabe que se borra todo lo que hay en el PC'],
       hacer: ['Borra el disco entero y deja Windows recién instalado: es lo que queda si restablecer falla.',
         'Necesitas un pendrive, otro PC para hacerlo y una hora. Si hay dos discos, la guía te enseña a reconocer el de Windows por su tamaño.',
-        'Si el PC cambia de dueño, borrar las particiones no impide recuperar lo borrado: hay que limpiar los discos enteros, también el de datos (lo explicará {u:U11}).'],
+        'Si el PC cambia de dueño, borrar las particiones no impide recuperar lo borrado: hay que limpiar los discos enteros, también el de datos (lo explica {u:U11}).'],
       ir: { u: 'U01', t: 'Sigue en: Instalar Windows 11 desde cero' } },
     'r-a-u03': { titulo: 'Primero, que arranque', riesgo: 'v', final: true,
       hacer: ['Antes de borrar nada, prueba las reparaciones: muchas veces vuelve a arrancar sin reinstalar.',
@@ -2639,7 +2706,7 @@ F1.registrar({
       hacer: ['Un SSD de la misma capacidad o mayor: de 2,5 pulgadas (el de los portátiles; en un sobremesa, con un soporte en el hueco de 3,5) o M.2, si la placa o el portátil tienen esa ranura (lo dice su manual). Se cambia con el equipo apagado y desenchufado.',
         'Antes, la copia de lo importante ({u:U05}); si encontraste un programa malicioso, límpialo antes: el clon lo copiaría.',
         'Si el disco de ahora está sano, se clona entero al SSD: Windows, programas y archivos, tal cual. Cómo, paso a paso: {u:U10}.'],
-      cierre: 'Hasta aquí llega este diagnóstico: lo que queda es el cambio de disco.' },
+      ir: { u: 'U10', t: 'Sigue en: Clonar un disco a un SSD' } },
     'r-disco-ssd': { titulo: 'Un SSD al 100 %: quién lo usa', riesgo: 'v', pregunta: '¿Baja el disco y va mejor?',
       hacer: ['En «Procesos», toca «Disco»: arriba, quién lo usa. Si es Windows o el antivirus, deja que acabe.',
         'Si es un programa (una descarga, una sincronización de la nube), espera o páusalo.',
@@ -2674,6 +2741,356 @@ F1.registrar({
       ir: { u: 'U04', nodo: 'salud', t: 'Decide: ¿formatear o restablecer?' } }
   },
   glosario: {}
+});
+F1.registrar({
+  id: 'U10', tipo: 'guia', icono: 'clonar',
+  titulo: 'Clonar un disco a un SSD', corto: 'Windows tal cual, en un disco nuevo', tiempo: '1-3 h, casi todo esperando',
+  revisado: 'nov. 2026', version: 'Windows 11 26H2 · Rescuezilla 2.6.2',
+  claves: ['clonar', 'clon', 'ssd', 'disco', 'cambiar disco', 'hdd', 'm.2', 'nvme', 'sata', 'rescuezilla', 'clonezilla', 'migrar', 'data migration', 'acronis', 'extender volumen', 'bitlocker'],
+  resumen: 'Pasar el disco entero (Windows, programas y archivos, tal cual) a un SSD nuevo, cambiarlo y arrancar desde él. **Si eliges bien el origen y el destino, el disco de ahora no se toca**: si algo sale mal, se vuelve a poner y está todo.',
+  necesitas: [
+    'El **SSD nuevo**, del tipo que admite el equipo (el paso de qué SSD cabe lo explica)',
+    { solo: { hueco: 'uno' }, t: 'Una **caja o un adaptador USB del tipo del SSD** (SATA o M.2 NVMe: uno no sirve para el otro), para clonar con el SSD fuera' },
+    { solo: { herr: 'rz' }, t: 'Un **pendrive** que se pueda borrar (de 4 GB o más) y otro PC o este para prepararlo' },
+    { solo: { hueco: 'dos', tipo: 'sata' }, t: 'Para un SSD de 2,5 en un sobremesa: un **cable de datos SATA**, un **conector de corriente SATA libre** en la fuente y un **soporte de 2,5 a 3,5** (a veces vienen con el SSD o la placa)' },
+    'Un **destornillador** pequeño y tocar algo metálico antes de abrir (la estática)',
+    'La **copia** de lo importante ({u:U05}): clonar no es una copia'
+  ],
+  caso: [
+    { id: 'hueco', pregunta: '¿Caben los dos discos dentro a la vez?',
+      opciones: [{ v: 'dos', t: 'Sí: tiene otro hueco o ranura libre (casi todos los sobremesa)' }, { v: 'uno', t: 'No: solo cabe uno (casi todos los portátiles)' }],
+      ayuda: 'Si solo cabe uno, el SSD se conecta por USB mientras se clona y después se cambia por el de ahora. Ojo: un portátil con disco de 2,5 puede tener, además, una ranura M.2 libre (lo dice su manual): entonces caben los dos.' },
+    { id: 'tipo', pregunta: '¿Qué SSD es?',
+      opciones: [{ v: 'sata', t: 'De 2,5 pulgadas (SATA)' }, { v: 'm2', t: 'M.2 (una tarjeta pequeña)' }],
+      ayuda: 'Tiene que ser el que admite el equipo: lo dice su manual o la ficha del modelo en la web de la marca.' },
+    { id: 'cabe', pregunta: '¿Cómo es el SSD comparado con el disco de ahora?',
+      opciones: [{ v: 'mayor', t: 'Igual o más grande que el disco de ahora entero' }, { v: 'menor', t: 'Más pequeño, pero lo ocupado cabe con sitio de sobra' }, { v: 'no', t: 'Ni lo ocupado cabe' }],
+      ayuda: 'El tamaño del disco entero y lo ocupado, en «Este equipo» (botón derecho en C: › Propiedades) y en «Discos y volúmenes».' },
+    { id: 'marca', pregunta: '¿El fabricante del SSD da su programa de clonar?',
+      opciones: [{ v: 'si', t: 'Sí (Samsung, Kingston, WD, Crucial…)' }, { v: 'no', t: 'No, o no lo sé' }],
+      ayuda: 'Míralo en la web de la marca del SSD, en su apartado de software o de soporte. Si no lo encuentras, di que no. **El de WD no clona a un disco por USB**: con un SSD WD y un solo hueco, di que no.' }
+  ],
+  derivar: function (c) {
+    c.herr = c.marca === 'si' ? 'marca' : (c.cabe === 'mayor' ? 'rz' : (c.cabe ? 'ninguna' : null));
+    c.clona = c.herr ? (c.herr === 'ninguna' ? 'no' : 'si') : null;
+  },
+  resultado: function (c) {
+    if (c.herr === 'ninguna') return 'Con un SSD **más pequeño** y sin el programa de su marca, **no se clona**: Rescuezilla no clona a un disco menor. Instala Windows de cero en el SSD ({u:U01}) y devuelve los datos ({u:U05}, {u:U06}).';
+    return (c.herr === 'marca' ? 'Tu herramienta: **el programa de la marca del SSD**, desde este Windows.' : 'Tu herramienta: **Rescuezilla**, gratis, desde un pendrive.') +
+      (c.hueco === 'uno' ? ' El SSD, por USB mientras clonas; después, en el sitio del de ahora.' : ' El SSD, dentro, en el hueco libre.') +
+      (c.cabe === 'no' ? ' **Antes, libera espacio** hasta que lo ocupado quepa con sitio de sobra.' : '');
+  },
+  avisos: [
+    { color: 'ambar', t: '**Si Windows ya iba mal** (errores, pantallazos, un programa malicioso), el clon se lleva el problema al SSD: mejor instalar de cero ({u:U01}) y devolver los datos.' },
+    { color: 'azul', t: '**Las órdenes** llevan un botón **Copiar**. Si lees en el móvil, copia en el móvil: en el PC, escríbela tal cual (o abre F1 en el PC).' }
+  ],
+  fases: [
+    { titulo: 'Antes', pasos: [
+      { id: 'c01', riesgo: 'v', titulo: 'Clonar o instalar de cero',
+        hacer: ['**Clona** si Windows va bien y solo quieres que vaya más rápido o tener más sitio: el dueño se encuentra su equipo igual, con sus programas.',
+          '**Instala de cero** ({u:U01}) si iba mal, si tenía un programa malicioso o si va a cambiar de dueño: el clon copia todo, también lo malo.',
+          'Y si el disco de ahora **falla**, lo primero es la copia ({u:U05}): el paso de la salud lo explica.'],
+        porque: 'Un clon es una copia exacta de las particiones: arregla la lentitud de un disco mecánico, no los problemas de Windows.' },
+      { id: 'c02', riesgo: 'a', aviso: 'clonar no es una copia', titulo: 'La copia de lo importante',
+        hacer: ['Haz la copia de los datos del dueño antes de nada, **abierta en otro equipo** ({u:U05}).',
+          'Si al clonar se eligen al revés el origen y el destino, el programa borra el disco de ahora: la copia es lo único que queda.'],
+        porque: 'El disco de ahora no se toca si todo va bien, pero un clic equivocado o un corte de luz a mitad pueden dejarte sin nada.',
+        ir: { u: 'U05', t: 'Cómo: Copia de seguridad antes de formatear' } },
+      { id: 'c03', riesgo: 'a', aviso: 'un disco que falla puede no acabar de clonarse', titulo: 'La salud del disco de ahora',
+        hacer: ['Configuración › «Sistema» › «Almacenamiento» › «Configuración avanzada de almacenamiento» › «Discos y volúmenes». Debajo del nombre de cada disco sale su estado.',
+          'Con «Buen estado», sigue. Con «Advertencia: se detectaron problemas» (o hace clics, o se cuelga al copiar), **la copia primero** y clona después, si se deja.',
+          'En su «Propiedades», apunta «Multimedia» (SSD o HDD), la «Capacidad» y el «Estilo de partición» (GPT o MBR): lo usarás en el primer arranque. Ahí mismo, «Estado de la unidad» enseña la vida restante estimada.'],
+        porque: 'Clonar lee el disco entero. Si tiene sectores que no se leen, el programa se para o deja el clon a medias.',
+        ir: { u: 'U09', nodo: 'salud', t: 'Si va mal: la salud del disco, en El PC va lento' } },
+      { id: 'c04', riesgo: 'v', titulo: 'Qué SSD cabe en el equipo',
+        hacer: [{ solo: { tipo: 'sata' }, t: 'Un **SSD de 2,5 pulgadas** va en el sitio de un disco de portátil, con el mismo conector SATA. En un sobremesa, en el hueco de 3,5 con un soporte, y con su cable de datos SATA y el de corriente.' },
+          { solo: { tipo: 'm2' }, t: 'Un **M.2** va en una ranura de la placa. Mira en el manual dos cosas: si la ranura es **NVMe** o **SATA** (un M.2 SATA no va en una ranura solo NVMe, ni al revés) y el largo: casi todos son **2280** (22 mm por 80 mm).' },
+          'El manual o la ficha del modelo (marca y modelo en la pegatina del equipo) lo dicen. El modelo del disco de ahora sale en «Discos y volúmenes»: búscalo en Internet y sabrás qué es (2,5 SATA o M.2).',
+          { solo: { tipo: 'm2' }, t: 'Si el de ahora es de 2,5 y el nuevo es M.2, el M.2 no va en su sitio: va en una **ranura M.2 libre** de la placa. Si la hay, caben los dos: vuelve a «Tu caso» y contesta que caben. **Si no la hay, este SSD no sirve en este equipo**: cámbialo por uno de 2,5 antes de seguir.' },
+          { solo: { cabe: 'mayor' }, t: 'El tamaño: igual o mayor que el disco de ahora entero. Lo que sobre se aprovecha al final.' },
+          { solo: { cabe: ['menor', 'no'] }, t: 'El tamaño: más pequeño que el de ahora **solo** vale con el programa de la marca del SSD, y con lo ocupado por debajo de lo que tiene el SSD y sitio de sobra (un 20 %).' }],
+        porque: 'Un disco mecánico es lo que más frena un Windows 11. Un SSD de cualquier tipo lo nota; uno M.2 NVMe, más.' },
+      { id: 'c05', riesgo: 'a', aviso: 'borra solo lo que el dueño diga', titulo: 'Libera espacio hasta que quepa', solo: { cabe: 'no' },
+        hacer: ['Configuración › «Sistema» › «Almacenamiento»: «Recomendaciones de limpieza» y los archivos temporales.',
+          'Pasa a un disco externo lo grande que el dueño no use a diario (vídeos, fotos de años) **después** de la copia ({u:U05}), con su permiso.',
+          'Sigue hasta que lo ocupado sea, como mucho, el 80 % del tamaño del SSD. Si no se llega, el SSD es pequeño: uno mayor, o instala de cero ({u:U01}).'],
+        porque: 'Ni el mejor programa mete 600 GB ocupados en un SSD de 500.' },
+      { id: 'c06', riesgo: 'v', titulo: 'Con este SSD, instala de cero', solo: { clona: 'no' },
+        hacer: ['Rescuezilla no clona a un disco **más pequeño** (lo dice su ayuda: hay que encoger antes las particiones, y es fácil romper algo).',
+          'Pon el SSD en lugar del disco de ahora (equipo apagado y desenchufado) e **instala Windows de cero** en él: {u:U01}.',
+          'Después, devuelve los datos de la copia: {u:U06}. El disco de ahora, guardado: es otra copia.'],
+        ir: { u: 'U01', t: 'Sigue en: Instalar Windows 11 desde cero' } },
+      { id: 'c07', riesgo: 'v', titulo: 'Apunta cada disco: modelo y tamaño', solo: { clona: 'si' },
+        hacer: ['En «Discos y volúmenes», cada disco sale con su nombre (el modelo) y su tamaño. Apunta los dos en un papel: **el de ahora (origen)**, que es el que tiene C:, y, cuando lo conectes, **el SSD (destino)**, el que está vacío.',
+          'Por ejemplo: origen, el disco mecánico de **500 GB**; destino, el SSD de **1 TB**. Los programas de clonar enseñan esos mismos datos.',
+          'Los tamaños bailan: Windows dice 465 GB en uno de 500 y 931 en uno de 1 TB; otros programas, 500 y 1000. Es el mismo disco.',
+          '**Si los dos miden lo mismo**, el tamaño no sirve: distínguelos por el **modelo** (el SSD suele llevar «SSD» en el nombre) y porque el de ahora tiene particiones y C:, y el SSD está vacío. Por USB, a veces sale el nombre de la caja: entonces, vacío o con particiones.'],
+        porque: 'Al clonar, el destino se borra entero. Elegirlos por el modelo y el tamaño, y no por «Disco 0» o «Disco 1», que cambian, es lo que evita borrar el que no era.' }
+    ] },
+    { titulo: 'Conectar el SSD', pasos: [
+      { id: 'c08', riesgo: 'r', aviso: 'hay que abrir el equipo', titulo: 'Pon el SSD en el hueco libre', solo: { clona: 'si', hueco: 'dos' },
+        freno: ['El equipo está apagado del todo, desenchufado, y me he descargado tocando metal', 'No está en garantía, o el dueño me deja abrirlo'],
+        hacer: ['Apágalo del todo (con {k:Mayús} pulsada al apagar) y desenchúfalo. Toca algo metálico antes de abrir.',
+          { solo: { tipo: 'sata' }, t: 'Atornilla el SSD en un hueco libre y conéctale **dos cables**: el de datos SATA a la placa y el de corriente de la fuente.' },
+          { solo: { tipo: 'm2' }, t: 'Mete el M.2 en su ranura, inclinado unos 30 grados, bájalo y sujétalo con su tornillo (o la pestaña). Si la ranura tiene un disipador, quítalo antes y vuelve a ponerlo.' },
+          'Cierra, enchufa y arranca Windows desde el disco de ahora, como siempre.'],
+        porque: 'Con los dos dentro, el clon va por dentro (más rápido que por USB) y el disco de ahora no se mueve de su sitio.' },
+      { id: 'c08b', riesgo: 'v', titulo: 'Conecta el SSD por USB', solo: { clona: 'si', hueco: 'uno' },
+        hacer: [{ solo: { tipo: 'sata' }, t: 'Mete el SSD de 2,5 en su **caja o adaptador USB SATA** y enchúfalo al PC (mejor a un puerto USB 3, el azul o el de tipo C).' },
+          { solo: { tipo: 'm2' }, t: 'Mete el M.2 en una **caja USB para M.2 NVMe** (o SATA, si el SSD es M.2 SATA: lo pone su pegatina) y enchúfala a un puerto USB 3 o de tipo C.' },
+          { solo: { herr: 'rz' }, t: 'Con Rescuezilla hacen falta **dos puertos**: uno para el SSD y otro para el pendrive.' },
+          'No abras el equipo todavía: el cambio, después de clonar.'],
+        porque: 'En un portátil solo cabe un disco: el clon se hace con el SSD fuera y luego se cambian.',
+        fallos: [{ s: 'No sale nada al enchufarlo', r: 'Casi siempre es la caja o el adaptador: tiene que ser del tipo del SSD. Un M.2 NVMe no funciona en una caja M.2 SATA (y al revés).' }] },
+      { id: 'c09', riesgo: 'v', titulo: 'Mira que Windows ve el SSD', solo: { clona: 'si' },
+        hacer: ['Abre la **Administración de discos**: botón derecho en Inicio › «Administración de discos» (o {c:diskmgmt.msc}).',
+          'El SSD sale como un disco más, todo «No asignado». Si sale «Inicializar disco», elige «GPT (Tabla de particiones GUID)» y «Aceptar»: no borra nada que haya que conservar y el clon lo sobrescribe.',
+          '**No crees ningún volumen** en el SSD: lo prepara el programa de clonar.',
+          'Comprueba el tamaño: es el del SSD que apuntaste (los discos salen algo más pequeños que en la caja: 931 GB en uno de 1 TB). Si los dos miden lo mismo, el SSD es el que sale entero «No asignado».'],
+        escena: 'dos-discos',
+        porque: 'Si Windows no lo ve, ningún programa podrá clonar en él: es mejor saberlo ahora.',
+        fallos: [{ s: 'No sale en la Administración de discos', r: 'Por USB: otro puerto, y que la caja sea del tipo del SSD. Dentro: apaga y desenchufa, y mira el cable de corriente y el de datos (SATA), o que la ranura M.2 sea de ese tipo (el manual).' }] }
+    ] },
+    { titulo: 'Clonar', pasos: [
+      { id: 'c10', riesgo: 'a', aviso: 'sin suspender, el SSD puede pedir la clave de 48 cifras', titulo: 'BitLocker: suspéndelo antes de clonar', solo: { clona: 'si' },
+        hacer: ['Mira si el disco está cifrado: botón derecho en Inicio › «Terminal (Administrador)» › «Sí», y {c:manage-bde -status C:}. Mira «Estado de conversión»: con «Descifrado completo» no está cifrado: sigue al paso siguiente.',
+          'Si dice «Cifrado completo» (o «Cifrado solo de espacio usado») y «Protección activada»: Panel de control › «Cifrado de unidad BitLocker» › «Suspender protección» (en Windows Home, «Cifrado del dispositivo»: usa la orden). O la orden: {c:manage-bde -protectors -disable C: -RebootCount 0}',
+          { solo: { cabe: ['menor', 'no'] }, t: '**Cifrado y con un SSD más pequeño:** suspender no basta (un volumen cifrado se copia entero, no solo lo ocupado). Descífralo antes: {c:manage-bde -off C:} y espera (horas) a que manage-bde -status diga «Descifrado completo». Al acabar, en el SSD, vuelve a activarlo («Activar BitLocker»).' },
+          'Ten a mano la **clave de recuperación** (48 cifras): el dueño la tiene en **aka.ms/myrecoverykey**, con su cuenta Microsoft.'],
+        porque: ['Suspender no descifra: deja la llave a mano hasta que se reanude. Con -RebootCount 0 queda suspendido hasta que lo reanudes tú, después de arrancar del SSD.', 'Sin suspender, al arrancar desde un disco nuevo BitLocker puede pedir la clave de recuperación.'] },
+      { id: 'c11', riesgo: 'r', aviso: 'el destino se borra entero', titulo: 'Clona con el programa de la marca del SSD', solo: { herr: 'marca' },
+        freno: ['Tengo la copia de lo importante, abierta en otro equipo', 'Tengo apuntados el modelo y el tamaño del disco de ahora (origen) y del SSD (destino)'],
+        hacer: ['Bájalo de la **web de la marca del SSD** (nunca de otra): Samsung, su **Data Migration**, dentro de Samsung Magician; Kingston, **Acronis True Image for Kingston**, desde Kingston SSD Manager; WD y Crucial, su **Acronis True Image**. Solo funcionan con un SSD de su marca conectado. Instálalo y ábrelo con el SSD ya conectado.',
+          'En el programa, la opción de **clonar** o de **migrar**: el **origen** es el disco de ahora (el de C:) y el **destino**, el SSD, por el modelo y el tamaño que apuntaste.',
+          { solo: { cabe: ['menor', 'no'] }, t: 'Con un SSD más pequeño, el programa encoge las particiones solo: mira en su resumen que salen todas y que caben.' },
+          { solo: { hueco: 'uno' }, t: 'El de **WD no clona a un disco por USB** (lo dice su soporte): con un SSD WD por USB, vuelve a «Tu caso» y contesta que la marca no da programa.' },
+          'Enchufa el cargador, confirma el aviso de que el destino se borra y **espera** sin usar el equipo (puede pedir reiniciar: déjalo). Al acabar, **apaga** (con {k:Mayús} pulsada al apagar).'],
+        porque: 'El programa de la marca va desde Windows, sin pendrive, y sabe meter el disco en un SSD más pequeño si lo ocupado cabe.',
+        fallos: [{ s: 'Dice que no hay un SSD de su marca', r: 'Ese programa solo vale para sus SSD. Vuelve a «Tu caso» y contesta que la marca no da programa: la guía te lleva a Rescuezilla (SSD igual o mayor) o a instalar de cero (más pequeño).' },
+          { s: 'Se para con errores de lectura', r: 'El disco de ahora tiene sectores que no se leen: es el paso de la salud. La copia primero ({u:U05}) y, si no se termina, instala de cero en el SSD.' }] },
+      { id: 'c12', riesgo: 'a', aviso: 'el pendrive se borra entero', titulo: 'Prepara el pendrive de Rescuezilla', solo: { herr: 'rz' },
+        hacer: ['Baja la ISO de **rescuezilla.com** (la de 64 bits, la última: la 2.6.2 en noviembre de 2026). Es gratis y de código abierto.',
+          '**Desenchufa antes la caja del SSD y cualquier otro disco USB.** Graba la ISO con **Rufus** (rufus.ie), como en {u:U01}: comprueba por su tamaño que «Dispositivo» es el pendrive, la ISO en «Elección de arranque» y «EMPEZAR»; si pregunta cómo escribirla, deja la que recomienda. Se borra entero.',
+          'Rescuezilla arranca con el arranque seguro (Secure Boot) encendido: no cambies nada en la BIOS.'],
+        porque: 'Rescuezilla es un sistema pequeño que arranca desde el pendrive y no escribe nada en los discos hasta que se lo pides. Por dentro es Clonezilla, el de siempre, con ventanas y ratón.' },
+      { id: 'c13', riesgo: 'r', aviso: 'el destino se borra entero', titulo: 'Clona con Rescuezilla', solo: { herr: 'rz' },
+        freno: ['Tengo la copia de lo importante, abierta en otro equipo', 'Tengo apuntados el modelo y el tamaño del disco de ahora (origen) y del SSD (destino)'],
+        hacer: ['Enchufa el cargador y **vuelve a enchufar la caja del SSD**. Con el SSD conectado y el pendrive puesto, apaga del todo (con {k:Mayús} pulsada al apagar) y arranca desde el pendrive con la tecla del menú de arranque ({u:U02}). Elige la primera opción del menú de Rescuezilla y espera a su escritorio.',
+          'Elige **clonar** (Clone). Primero, el **origen**: el disco de ahora, por su modelo y su tamaño. Después, el **destino**: el SSD. Rescuezilla enseña el modelo y el tamaño de cada uno: compáralos con tu papel (si miden lo mismo, el destino es el que no tiene particiones).',
+          'Deja marcadas todas las particiones del origen y confirma: avisa de que el destino se borra.',
+          'Espera sin tocar nada (de media hora a varias horas, según lo ocupado). Al acabar, apaga desde Rescuezilla y **quita el pendrive**.'],
+        porque: 'El clon copia la tabla de particiones y cada partición. Windows, en el SSD, arranca igual que en el disco de ahora.',
+        fallos: [{ s: 'No arranca el pendrive', r: 'Elige en el menú de arranque la entrada **UEFI** del pendrive ({u:U02}). Si vuelve a Windows, apágalo con {k:Mayús} pulsada y prueba otra vez.' },
+          { s: 'Rescuezilla no enseña el SSD', r: 'Apaga, cambia la caja de puerto (mejor USB 3) y vuelve a arrancar desde el pendrive. Si sigue sin salir en un M.2 por USB, la caja no es del tipo del SSD.' },
+          { s: 'Dice que el destino es pequeño', r: 'El SSD es más pequeño que el disco de ahora: Rescuezilla no lo hace. Instala de cero ({u:U01}); o, si tu SSD tiene programa de su marca (y no es WD por USB), vuelve a «Tu caso» y contesta que sí.' },
+          { s: 'Se para con errores de lectura', r: 'El disco de ahora tiene sectores que no se leen: es el paso de la salud. La copia primero ({u:U05}) y, si no se termina, instala de cero en el SSD.' }] }
+    ] },
+    { titulo: 'Cambiar el disco', pasos: [
+      { id: 'c14', riesgo: 'r', aviso: 'hay que abrir el equipo', titulo: 'Deja solo el SSD para arrancar', solo: { clona: 'si' },
+        freno: ['El equipo está apagado del todo, desenchufado (un portátil, también sin su batería si se quita) y me he descargado tocando metal', 'Sé cuál es el disco de ahora y cuál el SSD (el modelo, en la pegatina)'],
+        hacer: [{ solo: { hueco: 'uno' }, t: 'Saca el disco de ahora y pon el SSD **en su sitio**, con los mismos tornillos (en uno de 2,5, a veces va en un marco: pásalo al nuevo). Un M.2: a 30 grados, bájalo y su tornillo.' },
+          { solo: { hueco: 'dos' }, t: '**Desconecta el disco de ahora** (sus cables, o sácalo) para el primer arranque: solo el SSD dentro.' },
+          'Guarda el disco de ahora tal cual, con una etiqueta: es la copia mientras compruebas el SSD.'],
+        porque: 'Con los dos discos conectados (dentro o por USB), Windows ve dos gemelos: deja uno «sin conexión» («El disco está sin conexión porque tiene una colisión de firmas con otro disco que está conectado») o arranca del de ahora sin avisar, y crees que el SSD no va.' }
+    ] },
+    { titulo: 'El primer arranque', pasos: [
+      { id: 'c15', riesgo: 'v', titulo: 'Arranca desde el SSD y compruébalo', solo: { clona: 'si' },
+        hacer: ['Enciende. Debe arrancar Windows como siempre, con el escritorio del dueño.',
+          'Comprueba que es el SSD: «Discos y volúmenes» › el disco de C: › «Propiedades»: «Multimedia» debe decir **SSD** y el «Modelo», el del nuevo.',
+          'Abre un par de programas y unos archivos: tienen que estar todos.'],
+        porque: 'Si arranca y dice SSD, el clon está bien. El disco de ahora sigue guardado por si algo falta.',
+        fallos: [{ s: 'El SSD no sale en la BIOS', r: 'Apaga, desenchufa y mira la conexión: el M.2 bien metido y atornillado; el de 2,5, sus dos cables. Si sigue sin salir, la ranura no es de ese tipo (el manual).' },
+          { s: 'Sale en la BIOS pero no arranca (vuelve a la BIOS o dice que no hay disco de arranque)', r: 'Pon el SSD el primero del orden de arranque ({u:U02}), en el mismo modo que el disco de antes: con «Estilo de partición» GPT, **UEFI**; con MBR, Legacy o CSM. Si aún no arranca, el clon quedó a medias: vuelve a poner el disco de antes (y el SSD en su caja o en el otro hueco) y repite el clon.' },
+          { s: 'Pide la clave de recuperación de BitLocker', r: 'Escríbela (48 cifras, de aka.ms/myrecoverykey, la del mismo Id. que enseña la pantalla). Arranca y sigue: el paso de BitLocker lo deja bien.' },
+          { s: 'Arranca, pero va igual de lento', r: 'Mira «Multimedia» en sus «Propiedades»: si dice HDD, ha arrancado del disco de antes (tiene que estar fuera). Si dice SSD y va lento, sigue en {u:U09}.' }] },
+      { id: 'c16', riesgo: 'a', aviso: 'hasta reanudarlo, el disco no está protegido', titulo: 'BitLocker: reanúdalo', solo: { clona: 'si' },
+        hacer: ['Si lo suspendiste: Panel de control › «Cifrado de unidad BitLocker» › «Reanudar protección», o la orden {c:manage-bde -protectors -enable C:}',
+          'Comprueba con {c:manage-bde -status C:} que dice «Protección activada».',
+          '**Si lo descifraste antes de clonar** (SSD más pequeño): actívalo ahora en el SSD, Panel de control › «Cifrado de unidad BitLocker» › «Activar BitLocker», y que la clave nueva quede en la cuenta Microsoft del dueño.',
+          'Si no estaba cifrado, no hay nada que hacer aquí.'],
+        porque: 'Suspendido, la llave del cifrado está a mano en el disco: cualquiera que lo saque puede leerlo.' },
+      { id: 'c17', riesgo: 'a', aviso: 'no borres la partición de recuperación', titulo: 'Aprovecha el sitio que sobra', solo: { clona: 'si', cabe: 'mayor' },
+        hacer: ['En la Administración de discos, si el SSD es mayor que el disco de ahora, al final queda espacio **«No asignado»**.',
+          'Si está justo detrás de C:, botón derecho en C: › «Extender volumen...» y «Siguiente» hasta «Finalizar».',
+          'Si «Extender volumen...» sale **apagado**, es que la «Partición de recuperación» está en medio. No la borres: botón derecho en «No asignado» › «Nuevo volumen simple...» y crea con ese espacio una unidad **D:** para datos (NTFS, «Dar formato rápido»).',
+          'Si el SSD es del mismo tamaño, no sobra nada: sigue.'],
+        escena: 'dm-sobra',
+        porque: 'La partición de recuperación es la que usa el inicio avanzado para reparar Windows. Moverla o borrarla es cosa de un técnico con experiencia; una D: para los datos es igual de útil y no rompe nada.' },
+      { id: 'c18', riesgo: 'v', titulo: 'La activación', solo: { clona: 'si' },
+        hacer: ['Configuración › «Sistema» › «Activación»: «Estado de activación» debe decir **«Activo»**. Al desplegarlo: «Windows está activado con una licencia digital» (vinculada a la cuenta de Microsoft del dueño, si la tiene).',
+          'No tiene por qué cambiar: la licencia va con la placa, no con el disco.'],
+        porque: 'Si saliera sin activar (raro al cambiar solo el disco), «Solucionar problemas», en esa misma página, la recupera con la cuenta Microsoft del dueño.' }
+    ] },
+    { titulo: 'El disco de antes', pasos: [
+      { id: 'c19', riesgo: 'v', titulo: 'Guárdalo una semana y luego decide', solo: { clona: 'si' },
+        hacer: ['Guarda el disco de antes **una semana**, tal cual: si al dueño le falta algo, está ahí.',
+          'Después, si va a seguir en el equipo o en una caja USB como disco de copias, formatéalo: {u:U11}.',
+          'Si se lo lleva otra persona o se tira, bórralo de verdad (no basta con formatear): también en {u:U11}. Antes de borrarlo, búscalo por su **modelo** (no por el tamaño ni el número: el SSD puede medir lo mismo y salir como Disco 0 o 1).',
+          'Si estaba cifrado (y lo suspendiste o lo descifraste), ya no está protegido: cualquiera que lo conecte lo lee. Guárdalo en un sitio seguro hasta borrarlo.',
+          'Si lo vuelves a conectar sin formatear (dentro o por USB), Windows lo deja «sin conexión»: es el gemelo del SSD. Para sacar un archivo, conéctalo a **otro equipo**. Para formatearlo aquí, cuando estés seguro de que el SSD tiene todo: en la Administración de discos, botón derecho en su nombre («Disco 1») › «En línea», y luego {u:U11}.'],
+        porque: 'El disco de antes es la mejor copia mientras el dueño estrena el SSD: hasta que diga que no le falta nada, no se borra.' }
+    ] }
+  ],
+  final: [{ solo: { clona: 'si' }, t: 'Arranca desde el SSD solo, sin el disco de antes.' }, { solo: { clona: 'si' }, t: '«Discos y volúmenes» dice SSD en el disco de C:.' },
+    { solo: { clona: 'si' }, t: 'Están los programas y los archivos del dueño.' }, { solo: { clona: 'si' }, t: 'BitLocker, reanudado o vuelto a activar (o no estaba cifrado).' },
+    { solo: { clona: 'si' }, t: 'Windows está activado.' }, { solo: { clona: 'si', cabe: 'mayor' }, t: 'El sitio que sobraba, en C: o en una D:.' },
+    { solo: { clona: 'si' }, t: 'El disco de antes, guardado una semana con su etiqueta.' },
+    { solo: { clona: 'no' }, t: 'Windows, instalado de cero en el SSD, y los datos devueltos.' }],
+  finTitulo: 'Comprueba el SSD', finTexto: 'Antes de devolver el equipo, comprueba cada punto con el dueño.',
+  finListo: 'El equipo arranca desde el SSD con todo lo suyo. El disco de antes, una semana guardado.',
+  despues: ['{u:U06}', '{u:U11}', 'Si el equipo sigue lento con el SSD: {u:U09}.'],
+  chuleta: [
+    { r: 'a', t: '**Antes:** ¿clonar o instalar de cero? · la copia ({u:U05}) · la salud del disco («Discos y volúmenes» › «Propiedades» › «Estado de la unidad»).' },
+    '**El SSD:** 2,5 SATA o M.2 (NVMe o SATA, 2280), el que admite el equipo (un M.2 no va en el sitio de un 2,5); igual o mayor, o menor con el programa de su marca y lo ocupado con sitio de sobra.',
+    { r: 'r', t: '**Apunta** el modelo y el tamaño del origen (el de ahora) y del destino (el SSD): el destino se borra entero.' },
+    { tuyo: { hueco: 'uno' }, t: '**Un solo hueco:** el SSD por USB, en una caja de su tipo, y el cambio después de clonar.' },
+    { tuyo: { hueco: 'dos' }, t: '**Dos huecos:** el SSD dentro, con el equipo apagado y desenchufado.' },
+    { r: 'a', t: '**BitLocker:** manage-bde -status C: · si está cifrado, «Suspender protección» o manage-bde -protectors -disable C: -RebootCount 0 · con un SSD más pequeño, descifrar antes (manage-bde -off C:).' },
+    { tuyo: { herr: 'marca' }, t: '**Programa de la marca del SSD** (de su web; el de WD, no por USB): clonar, origen el de C:, destino el SSD.' },
+    { tuyo: { herr: 'rz' }, t: '**Rescuezilla** (rescuezilla.com) en un pendrive con Rufus · arrancar con la tecla del menú ({u:U02}) · Clone · origen, destino, confirmar.' },
+    { r: 'r', t: '**Primer arranque solo con el SSD** (si no, «colisión de firmas»); en «Propiedades», «Multimedia: SSD».' },
+    { r: 'a', t: '**Después:** «Reanudar protección» (manage-bde -protectors -enable C:) · lo que sobra: «Extender volumen...» o, si sale apagado, «Nuevo volumen simple...» (D:) · la activación.' },
+    '**El de antes:** una semana guardado; luego, formatearlo o borrarlo de verdad ({u:U11}).',
+    { tuyo: { clona: 'no' }, t: '**SSD más pequeño sin programa de su marca:** instalar de cero ({u:U01}) y devolver los datos ({u:U06}).' }
+  ],
+  glosario: {}
+});
+F1.registrar({
+  id: 'U11', tipo: 'guia', icono: 'pendrive',
+  titulo: 'Formatear un pendrive o un disco', corto: 'El sistema de archivos que toca, sin borrar el que no era', tiempo: '5-15 min',
+  revisado: 'nov. 2026', version: 'Windows 11 26H2',
+  claves: ['formatear', 'formato', 'pendrive', 'usb', 'disco externo', 'exfat', 'fat32', 'ntfs', 'particiones', 'diskpart', 'clean', 'protegido contra escritura', 'no pudo completar el formato', 'borrar', 'vender', 'tarjeta sd'],
+  resumen: 'Dejar un pendrive o un disco vacío y con el **sistema de archivos que toca** para lo que se va a usar, **sin borrar el que no era**. Y cuando se da o se vende, **borrarlo de verdad**.',
+  necesitas: [
+    'El pendrive o el disco, y saber que **lo que tiene está copiado** o no se quiere',
+    'Un PC con Windows',
+    { solo: { para: 'vender' }, t: 'Tiempo: borrar de verdad un disco grande tarda **horas**' }
+  ],
+  caso: [
+    { id: 'para', pregunta: '¿Para qué lo quieres?',
+      opciones: [{ v: 'todo', t: 'Para usarlo en cualquier sitio: Windows, Mac, la tele, el móvil' }, { v: 'fat', t: 'Para un aparato que pide FAT32: el coche, una radio, una impresora, actualizar la BIOS' },
+        { v: 'ntfs', t: 'Un disco solo para Windows: de datos o de copias' }, { v: 'vender', t: 'Para darlo o venderlo: borrarlo de verdad' }],
+      ayuda: 'De esto sale el {g:sistema de archivos}: la forma de guardar los archivos que entiende cada aparato.' },
+    { id: 'como', pregunta: '¿Cómo sale en «Este equipo»?',
+      opciones: [{ v: 'normal', t: 'Normal: con su letra y su tamaño de verdad' }, { v: 'raro', t: 'Raro: más pequeño de lo que es, sin letra, en varias unidades, o no sale (un disco nuevo)' }],
+      ayuda: 'Un pendrive que ha sido instalador de Windows (el de Rufus) suele salir «raro»: en dos partes, la suya y una de 1 MB que se llama RUFUS_BOOT.' }
+  ],
+  derivar: function (c) { c.fs = { todo: 'exFAT', fat: 'FAT32', ntfs: 'NTFS', vender: 'exFAT' }[c.para] || null; },
+  resultado: function (c) {
+    if (c.para === 'vender') return '**Borrar de verdad:** formatear no basta. Con **diskpart**, el disco entero a ceros (o, en un SSD, el borrado de su marca) y, después, un formato normal en **exFAT**.';
+    return 'Tu sistema de archivos: **' + c.fs + '**. ' + (c.como === 'raro' ? 'Con la **Administración de discos**, que ve el disco entero (y **diskpart**, si ella no puede).' : 'Con el **Explorador**: botón derecho › «Formatear...».');
+  },
+  avisos: [
+    { color: 'ambar', t: '**Formatear borra todo lo de esa unidad.** Lo más peligroso es equivocarse de unidad: el primer paso es saber cuál es.' },
+    { solo: { como: 'raro' }, color: 'azul', t: '**Las órdenes** llevan un botón **Copiar**. Si lees en el móvil, copia en el móvil: en el PC, escríbela tal cual (o abre F1 en el PC).' },
+    { solo: { para: ['fat', 'vender'], como: 'normal' }, color: 'azul', t: '**Las órdenes** llevan un botón **Copiar**. Si lees en el móvil, copia en el móvil: en el PC, escríbela tal cual (o abre F1 en el PC).' }
+  ],
+  fases: [
+    { titulo: 'Antes', pasos: [
+      { id: 'f01', riesgo: 'a', aviso: 'quita lo que no sea', titulo: 'Saber cuál es: la letra, el tamaño y el nombre',
+        hacer: ['Quita los **demás** pendrives y discos USB, también el de la copia.',
+          'Enchufa el tuyo y mira en el Explorador, en «Este equipo», su **letra**, su **tamaño** y su **nombre** (por ejemplo, «PENDRIVE (E:)», de 29,8 GB). Apúntalos.',
+          'Windows enseña menos que la caja: uno de 16 GB sale con unos 14,9; de 32, con 29,8; de 64, con 59,6; un disco de 2 TB, con 1,81 TB. Es normal.',
+          'Si tiene algo que conservar, cópialo antes al PC o a otro disco y ábrelo allí ({u:U05}).',
+          { solo: { como: 'raro' }, t: 'Si sale raro, la letra de «Este equipo» enseña solo una parte: apunta también el tamaño de la caja o la pegatina y la marca. En la Administración de discos verás en qué «Disco» está esa letra: ese es el tuyo.' }],
+        porque: 'El disco de Windows (C:) no deja formatearse, pero un disco de datos o el de la copia, sí, sin preguntar de quién es.' },
+      { id: 'f02', riesgo: 'v', titulo: 'El sistema de archivos que toca',
+        hacer: [{ solo: { para: 'todo' }, t: '**exFAT**: lo leen Windows, Mac, Linux, los móviles y casi todas las teles de ahora, y admite archivos grandes (una película de 10 GB). Una tele o un coche de hace años puede no leerlo: entonces, FAT32.' },
+          { solo: { para: 'fat' }, t: '**FAT32**: lo lee todo, también lo antiguo, pero **ningún archivo puede pasar de 4 GB**. El Explorador solo lo ofrece en unidades de **32 GB o menos**: para una mayor, se hace una parte de 32 GB (los pasos siguientes lo explican).' },
+          { solo: { para: 'fat' }, t: 'Para **actualizar la BIOS**: mejor un pendrive de 32 GB o menos, con el archivo suelto, fuera de carpetas. Si la BIOS no lo ve, prepáralo con diskpart (queda en MBR, el que leen casi todas).' },
+          { solo: { para: 'ntfs' }, t: '**NTFS**: el de Windows (permisos, archivos grandes, cifrado). Un Mac lo lee pero no escribe, y muchas teles y coches no lo leen.' },
+          { solo: { para: 'vender' }, t: 'Para darlo, el sistema de archivos da igual: lo importante es **borrar de verdad** lo de antes. Al final, **exFAT**, que vale para cualquiera.' },
+          'El **tamaño de unidad de asignación**: el predeterminado. Solo lo cambia quien sabe para qué.'],
+        porque: 'FAT32 es de 1996: por eso sus límites. exFAT es su versión moderna para memorias USB; NTFS, el de los discos de Windows.' }
+    ] },
+    { titulo: 'Formatear', pasos: [
+      { id: 'f03', riesgo: 'r', aviso: 'borra todo lo de esa unidad', titulo: 'Formatéalo desde el Explorador', solo: { como: 'normal', para: ['todo', 'fat', 'ntfs'] },
+        freno: ['La letra, el tamaño y el nombre son los que apunté', 'Lo que tiene está copiado o no lo quiero'],
+        hacer: ['En «Este equipo», botón derecho en la unidad › «Formatear...».',
+          { solo: { para: 'todo' }, t: 'En «Sistema de archivos», **exFAT**.' },
+          { solo: { para: 'fat' }, t: 'En «Sistema de archivos», **FAT32**. Si no sale (la unidad pasa de 32 GB), cierra y sigue en el paso de FAT32.' },
+          { solo: { para: 'ntfs' }, t: 'En «Sistema de archivos», **NTFS**.' },
+          '«Tamaño de unidad de asignación», como está; en «Etiqueta del volumen», un nombre corto (PENDRIVE); **«Formato rápido»**, marcado.',
+          'Pulsa «Iniciar». Sale «ADVERTENCIA: si formatea este disco, se borrarán TODOS los datos en él.»: mira que el título del cuadro dice **tu letra** y pulsa «Aceptar». Al acabar, «Formato completo.» y «Cerrar».'],
+        escena: 'formatear',
+        porque: ['El **formato rápido** solo pone el índice nuevo: tarda segundos. El completo, además, escribe ceros en toda la unidad (horas en un disco grande): para usarlo no hace falta.', 'Y ninguno de los dos, en un SSD o un pendrive, garantiza que no se pueda recuperar lo de antes: para eso, borrar de verdad.'],
+        fallos: [{ s: '«El disco está protegido contra escritura.»', r: 'Mira si tiene un **interruptor** (las tarjetas SD y algunos pendrives): ponlo hacia el lado contrario a «Lock». Si no tiene, vuelve a «Tu caso» y contesta que sale **raro**: el paso de diskpart lo quita (attributes disk clear readonly), con su freno para elegir bien el disco. Si vuelve a salir, el pendrive está gastado y solo lee: copia lo que tenga y tíralo.' },
+          { s: '«Windows no pudo completar el formato.»', r: 'Vuelve a «Tu caso» y contesta que sale **raro**: te lleva a la Administración de discos y, si tampoco puede, a diskpart, con cómo elegir el disco sin equivocarte. Si aún falla, el pendrive está roto.' },
+          { s: '«Windows no puede formatear esta unidad. Cierre las utilidades de disco y otros programas que estén usando esta unidad…»', r: 'Cierra las ventanas del Explorador de esa unidad y los programas con archivos suyos abiertos (o el antivirus que la esté examinando) y repite.' }] },
+      { id: 'f04', riesgo: 'r', aviso: 'borra todo lo de esa unidad', titulo: 'FAT32 en una unidad de más de 32 GB', solo: { para: 'fat', como: 'normal' },
+        freno: ['La letra, el tamaño y el nombre son los que apunté', 'Lo que tiene está copiado o no lo quiero'],
+        hacer: ['Abre el Terminal como administrador (botón derecho en Inicio › «Terminal (Administrador)»). Cambia **E:** por tu letra: {c:format E: /FS:FAT32 /Q /V:PENDRIVE}',
+          'Si pide «Inserte un disco nuevo en la unidad E:», pulsa {k:Intro}. Al acabar, «Formato completado.».',
+          'Si dice que el volumen es **demasiado grande para FAT32**, tu Windows aún no lo admite por orden: crea en la Administración de discos una partición de **32 GB** (32768 MB en «Nuevo volumen simple...»), que sí sale en FAT32. El resto del pendrive se queda sin usar.'],
+        porque: ['El diálogo del Explorador sigue sin ofrecer FAT32 por encima de 32 GB. La orden **format** llega hasta 2 TB desde una actualización de 2026 de Windows 11 (se va activando poco a poco; en los equipos de empresa, apagada).', 'Antes de que existiera, la salida era la partición de 32 GB: sigue valiendo para todo.'],
+        ir: { u: 'U07', fila: 'format', t: 'La orden format, en la chuleta de comandos' } },
+      { id: 'f05', riesgo: 'r', aviso: 'borra el disco que elijas', titulo: 'Con la Administración de discos', solo: { como: 'raro', para: ['todo', 'fat', 'ntfs'] },
+        freno: ['He encontrado mi disco por su letra y su tamaño, y no es el que tiene C: ni el de la copia', 'Lo que tiene está copiado o no lo quiero'],
+        hacer: ['Botón derecho en Inicio › «Administración de discos». Abajo, cada disco en una fila: busca **el tuyo** por la letra que apuntaste (¿en qué «Disco N» está?) y por el tamaño (un pendrive de 32 GB sale con unos 29,8 GB y dice «Extraíble»). Si hay dos del mismo tamaño, por el modelo («Discos y volúmenes» o detail disk; por USB puede salir uno genérico, como «VendorCo ProductCode»). Apunta ese número.',
+          'Si dice «Sin inicializar» (un disco nuevo): botón derecho en el nombre del disco › «Inicializar disco» › «GPT (Tabla de particiones GUID)» (para un aparato o un PC muy antiguos, «MBR (Registro de arranque maestro)») › «Aceptar».',
+          'Si tiene varias partes (las del instalador): botón derecho en **cada una de ese disco** › «Eliminar volumen...» › «Sí», hasta que todo quede «No asignado».',
+          { solo: { para: ['todo', 'ntfs'] }, t: 'Botón derecho en «No asignado» › «Nuevo volumen simple...» › «Siguiente» (el tamaño, todo) › «Asignar la letra de unidad siguiente:» › en «Formatear la partición», ' + '«Sistema de archivos», el tuyo, una etiqueta y «Dar formato rápido» › «Finalizar».' },
+          { solo: { para: 'fat' }, t: 'Botón derecho en «No asignado» › «Nuevo volumen simple...»: para FAT32, el tamaño como mucho **32768** MB › «Asignar la letra de unidad siguiente:» › en «Formatear la partición», FAT32, una etiqueta y «Dar formato rápido» › «Finalizar».' }],
+        escena: 'dm-pendrive',
+        porque: 'El Explorador solo ve las unidades con letra; la Administración de discos ve el disco entero, con sus partes y lo que no está asignado.',
+        fallos: [{ s: '«Eliminar volumen...» sale apagado en una parte', r: 'Es una partición protegida (de sistema o de recuperación). Si es del pendrive, no del disco de Windows, sigue con diskpart, el paso siguiente.' },
+          { s: 'El disco no sale', r: 'Otro puerto o, si es un disco, otro cable. Si tampoco sale en otro PC, el disco o su caja están rotos.' }] },
+      { id: 'f06', riesgo: 'r', aviso: 'clean borra el disco que elijas', titulo: 'Si la Administración de discos no puede: diskpart', solo: { como: 'raro', para: ['todo', 'fat', 'ntfs'] },
+        freno: ['Tengo el número de mi disco de la Administración de discos, y en list disk casa su tamaño', 'detail disk me ha enseñado el nombre de mi pendrive o disco, no el de otro'],
+        hacer: ['Terminal como administrador: {c:diskpart}, luego {c:list disk}. Busca **el número que apuntaste** en la Administración de discos y comprueba que casa su tamaño (columna Tamaño).',
+          'Elígelo escribiendo **select disk** y ese número (por ejemplo, select disk 2): debe decir «El disco 2 es ahora el disco seleccionado.». Luego {c:detail disk}: enseña su nombre y si es USB. **Si no es el tuyo, para aquí.**',
+          'Si estaba **protegido contra escritura**: {c:attributes disk clear readonly} («Atributos de disco borrados correctamente.»).',
+          'Bórralo: {c:clean} («DiskPart ha limpiado el disco satisfactoriamente.»).',
+          { solo: { para: 'todo' }, t: 'Y prepáralo, una orden detrás de otra: {c:create partition primary}, {c:format fs=exfat quick label=PENDRIVE}, {c:assign} y {c:exit}' },
+          { solo: { para: 'ntfs' }, t: 'Y prepáralo, una orden detrás de otra (en un disco de más de 2 TB, antes {c:convert gpt}): {c:create partition primary}, {c:format fs=ntfs quick label=DATOS}, {c:assign} y {c:exit}' },
+          { solo: { para: 'fat' }, t: 'Y prepáralo, una orden detrás de otra: {c:create partition primary size=32768} (32 GB: si el tuyo es de 32 o menos, quita size=32768), {c:format fs=fat32 quick label=PENDRIVE}, {c:assign} y {c:exit}' }],
+        porque: '**clean** borra la tabla de particiones del disco elegido, también las que la Administración de discos no deja tocar. Con el select disk equivocado, borras el que no era: por eso el número de la Administración de discos, el tamaño y detail disk. El número de select disk no lleva botón de copiar a propósito: es el tuyo, no el del ejemplo.',
+        ir: { u: 'U07', fila: 'clean', t: 'clean y list volume, en la chuleta de comandos' } },
+      { id: 'f07', riesgo: 'r', aviso: 'esto no tiene vuelta atrás', titulo: 'Bórralo de verdad antes de darlo', solo: { para: 'vender' },
+        freno: ['Tengo el número de mi disco de la Administración de discos (el «Disco N» donde está su letra), y en list disk casa su tamaño', 'detail disk me ha enseñado el nombre de mi disco, no el de otro'],
+        hacer: ['Primero, en la Administración de discos (botón derecho en Inicio), mira en qué **«Disco N»** está la letra que apuntaste y apunta el número. Las partes sin letra del mismo disco se borran también.',
+          '**Un pendrive o un disco mecánico (HDD):** botón derecho en Inicio › «Terminal (Administrador)», {c:diskpart} y {c:list disk} (casa el tamaño con tu número). Escribe **select disk** y tu número: debe decir «El disco 2 es ahora el disco seleccionado.» (con el tuyo). Luego {c:detail disk}: enseña su nombre y si es USB. **Si no es el tuyo, para aquí.** Si lo es, {c:clean all}: escribe ceros en todo el disco.',
+          '**Tarda horas** (un disco de 2 TB por USB 3, de cuatro a seis) y no enseña cuánto lleva: enchufado, con el PC sin suspenderse, y sin tocar el cable. Acaba con «DiskPart ha limpiado el disco satisfactoriamente.».',
+          '**Un SSD:** el borrado seguro del programa de su marca (Samsung Magician, Kingston SSD Manager…), de la web del fabricante. Un SSD reparte lo escrito por dentro, y escribir ceros desde Windows no llega a todo.',
+          '**Si se va con el PC entero**, mejor restablecerlo con «Quitar todo» y la limpieza de la unidad: {u:U04}.',
+          'Al acabar, el disco queda sin nada: {c:create partition primary} (en uno de más de 2 TB, antes {c:convert gpt}), {c:format fs=exfat quick label=USB}, {c:assign} y {c:exit}.'],
+        porque: ['Un formato rápido no borra los archivos: solo el índice. Un programa de recuperar los encuentra casi todos.', 'clean all los sobrescribe uno a uno; en un SSD, el de la marca usa la orden de borrado del propio disco.'],
+        fallos: [{ s: 'clean all se para con un error (de E/S, de acceso) o se desconecta el disco', r: 'Vuelve a empezar desde diskpart, list disk y select disk: clean all empieza de cero. Si se para siempre en el mismo sitio, el disco tiene zonas que no se escriben: para darlo no vale; se destruye.' }],
+        ir: { u: 'U07', fila: 'clean', t: 'clean, en la chuleta de comandos' } }
+    ] },
+    { titulo: 'Al terminar', pasos: [
+      { id: 'f08', riesgo: 'v', titulo: 'Compruébalo y expúlsalo bien',
+        hacer: ['En «Este equipo»: la letra, el **tamaño de verdad** (con FAT32 en uno de más de 32 GB, unos 32 GB: lo demás queda sin usar) y, en botón derecho › Propiedades, el «Sistema de archivos» que elegiste.',
+          { solo: { para: ['todo', 'fat', 'ntfs'] }, t: 'Copia un archivo y ábrelo desde la unidad: si se abre, está bien. Si es para un aparato (la tele, el coche), pruébalo allí.' },
+          { solo: { para: 'vender' }, t: 'Que salga vacía y con su tamaño de verdad. No le copies nada: se entrega vacía.' },
+          'Para quitarlo: el icono «Quitar hardware de forma segura y expulsar el medio» de la barra de tareas (o botón derecho en la unidad › «Expulsar») › «Expulsar» con su nombre. Espera a «Es seguro quitar el hardware».'],
+        porque: 'Sacarlo mientras escribe deja archivos a medias y, a veces, la unidad «raro» otra vez.',
+        fallos: [{ s: '«Problema al expulsar»', r: 'Algo lo está usando: cierra sus ventanas y los programas con archivos suyos y vuelve a probar. Si no, apaga el PC y quítalo apagado.' },
+          { solo: { para: ['todo', 'fat', 'ntfs'] }, s: 'El aparato no lo lee', r: 'Formatéalo en FAT32 (vuelve a «Tu caso»: un aparato que pide FAT32). Algunas teles y coches tampoco leen un pendrive de más de 32 GB.' },
+          { s: 'Sale con mucho menos tamaño del que pone la caja', r: 'Un poco menos es normal (29,8 GB en uno de 32). Si hiciste una partición de 32 GB para FAT32, saldrá con unos 32: también es normal. Si no, y es mucho menos, quedan partes sin borrar: vuelve a «Tu caso», contesta que sale raro y sigue con diskpart. Si dice 2 TB y costó muy poco, es falso (escribe hasta un punto y lo demás se pierde): devuélvelo.' }] }
+    ] }
+  ],
+  final: ['Era la unidad que tocaba (la letra, el tamaño y el nombre que apunté).', { solo: { para: ['todo', 'fat', 'ntfs'] }, t: 'Sale con su tamaño de verdad (o unos 32 GB, si hice una partición para FAT32) y el sistema de archivos que elegí.' },
+    { solo: { para: 'vender' }, t: 'Está borrada de verdad (clean all o el borrado de la marca) y con un formato nuevo.' },
+    { solo: { para: ['todo', 'fat', 'ntfs'] }, t: 'Un archivo copiado se abre desde ella.' }, 'La expulsé antes de quitarla.'],
+  finTitulo: 'Comprueba la unidad', finTexto: 'Antes de guardarla o entregarla, comprueba cada punto.',
+  finListo: 'La unidad está lista para usar.',
+  despues: ['El pendrive de instalación de Windows se hace en {u:U01}, no aquí (lo prepara Rufus o Media Creation Tool).', 'Las órdenes de disco, sueltas: {u:U07}.'],
+  chuleta: [
+    { r: 'a', t: '**Cuál es:** quita los demás USB · letra, tamaño y nombre en «Este equipo», apuntados.' },
+    { tuyo: { para: 'todo' }, t: '**exFAT** para todo; ' + 'FAT32 para lo antiguo (archivos de menos de 4 GB); NTFS solo Windows.' },
+    { tuyo: { para: 'fat' }, t: '**FAT32**: archivos de menos de 4 GB; el Explorador, solo hasta 32 GB; más: format E: /FS:FAT32 /Q o una partición de 32 GB.' },
+    { tuyo: { para: 'ntfs' }, t: '**NTFS** para un disco de Windows (un Mac no escribe en él).' },
+    { r: 'r', t: '**Normal:** «Este equipo» › botón derecho › «Formatear...» › «Sistema de archivos» · «Formato rápido» · «Iniciar» · «Aceptar» (mira la letra del título).' },
+    { r: 'r', t: '**Raro:** «Administración de discos» › por el tamaño › «Eliminar volumen...» en cada parte › «Nuevo volumen simple...».' },
+    { r: 'r', t: '**diskpart:** el número del disco, de la Administración de discos · list disk (casa el tamaño) · select disk N · detail disk (¿es el tuyo?) · clean · create partition primary · format fs=exfat quick · assign · exit.' },
+    { tuyo: { para: 'vender' }, t: '**Borrar de verdad:** clean all (HDD y pendrive, horas) · SSD, el borrado de su marca · PC entero, «Quitar todo» ({u:U04}).' },
+    '**Protegido contra escritura:** el interruptor · attributes disk clear readonly · si sigue, gastado.',
+    '**Quitarlo:** «Expulsar» y esperar a «Es seguro quitar el hardware».'
+  ],
+  glosario: {
+    'sistema de archivos': 'La forma de organizar los archivos en una unidad (exFAT, FAT32, NTFS). Cada aparato entiende unos: por eso se elige según dónde se va a usar.'
+  }
 });
 F1.enCamino([
   { id: 'U01', tipo: 'guia', icono: 'win', titulo: 'Instalar Windows 11 desde cero' },
